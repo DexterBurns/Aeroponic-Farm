@@ -13,13 +13,6 @@
 // Define buzzer pin
 #define BUZZER_PIN 21
 
-<<<<<<< HEAD
-=======
-// Define ADC Pin for the pressure pump
-#define PRESSURE_PIN 10
-
-// random needed variables
->>>>>>> 5be790b98eefb2b397c69f527458c446cb511320
 bool motor_flag = false;
 uint32_t curr_pressure = 0;
 bool start_flag = false;
