@@ -13,9 +13,6 @@
 // Define buzzer pin
 #define BUZZER_PIN 21
 
-// Define ADC Pin for the pressure pump
-#define PRESSURE_PIN 10
-
 bool motor_flag = false;
 uint32_t curr_pressure = 0;
 
@@ -95,11 +92,3 @@ void setSolenoid(int solenoid){
 }
 
 // put function definitions here:
-int readPressure(int pin) {
-
-  uint32_t pressure = 0;
-
-  pressure = analogRead(pin);
-  
-  return pressure;
-}
