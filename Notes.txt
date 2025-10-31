@@ -32,6 +32,7 @@ Nozzles:
     and unpressurized water in the system near the nozzles from the last run. It isnt as bad when 
     pressurizing one set of nozzles at a time though, so this may not be a big issue. Just keep in 
     mind of it though. THAT and we need to understand for how long we can spray with 5 nozzles for our system from 100psi to 80psi (or whichever lower end pressure)
+    Solution for this might be to just bring the solenoids closer to the nozzles.
 
     Also check how long a set of nozzles can run on a full charge of water at 100 psi.
 
