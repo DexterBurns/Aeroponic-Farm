@@ -42,4 +42,11 @@ Nozzles:
 Loop start  2. Activate Solenoid A for x seconds. Check PSI.
             3. If psi below a certain threshold, interrupt cycle and repressurize system
 Loop End    4. If pressure between 90 and 100 psi, then we're good and can loop back to step 2
+
+
+Serial Comms:
+    This should be code to communicate over serial and take commands to do things so we dont have to keep reloading code to be able to test the system out.
+
+    (Test,Duration) Is the format to use for running a test. May need to store the type of test based on the integer received. 
+
             
