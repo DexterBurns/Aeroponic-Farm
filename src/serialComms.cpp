@@ -32,10 +32,12 @@ int readFromSerial(){
     // Keep looping until a message is received
     while(task_msg_rec == false){
 
+        vTaskDelay(pdMS_TO_TICKS(100)); //delay to keep the system from being overworked during the loop.
         if(task_msg_flag == false){
             // Find a way to parse. Maybe do messages separately.
             Serial.println("Enter the task you want to perform: \n");
             task_msg_flag = true;
+            
         }
 
         // If we got a message, now we ask for the time to perform the task 
@@ -48,6 +50,8 @@ int readFromSerial(){
             if(task_msg_rec == true){
                 
                 while(time_msg_rec == false){
+
+                    vTaskDelay(pdMS_TO_TICKS(100)); //delay to keep the system from being overworked during the loop.
 
                     if(time_msg_flag == false){
                         Serial.println("Enter the time you want the task to run: \n");

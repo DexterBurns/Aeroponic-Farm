@@ -12,6 +12,8 @@
 #define PSI_UPPER_LIMIT 90
 #define PSI_LOWER_LIMIT 80
 
+int off_duration_scale = 7;
+
 // Object to hold the moving average
 movingAvg avgPressure(10);
 
@@ -64,6 +66,8 @@ void testPSILimits_debug(unsigned long start_time, int duration){
             break;
         }
 
+        vTaskDelay(pdMS_TO_TICKS(100));
+
     }
 
 }
@@ -75,10 +79,10 @@ so that we can read the manual pressure and associate it with a digital value in
 3. Print to serial what the digital pressure transducer is reading, during all of this. */
 void  config_pTransducer_debug(int on_duration){
 
-    int off_duration = on_duration*8;
+    int off_duration = on_duration*off_duration_scale;
     // converting ms to seconds, just for ease of use
     int on_duration_sec = on_duration/1000;
-    int off_duration_sec = (on_duration*8)/1000;
+    int off_duration_sec = (on_duration*off_duration_scale)/1000;
     bool f_flag = true; //flag that breaks the loop
     bool motor_on_flag = true;
     int count = 0;
@@ -92,7 +96,7 @@ void  config_pTransducer_debug(int on_duration){
                 int p = readTransducer();
                 Serial.printf("Pressure Reading: %d\n", p);
                 if(readButton() == LOW){f_flag = false; break;}
-                vTaskDelay(delay); //delay task by 100ms to let other system functions run
+                vTaskDelay(pdMS_TO_TICKS(delay)); //delay task by 100ms to let other system functions run
             }
             motor_on_flag = false; //On cycle complete, turn motor off 
         }
@@ -103,13 +107,14 @@ void  config_pTransducer_debug(int on_duration){
                 int p = readTransducer();
                 Serial.printf("Pressure Reading: %d\n", p);
                 if(readButton() == LOW){f_flag = false; break;}
-                vTaskDelay(delay); //delay task by 100ms to let other system functions run
+                vTaskDelay(pdMS_TO_TICKS(delay)); //delay task by 100ms to let other system functions run
             }
             motor_on_flag = true; //off-cycle complete, time to turn motor back on
         }
 
         else if(f_flag == false){
             f_flag = false;
+            Serial.printf("Transducer Debug Stopped. All solenoids will now be opened.\n");
             break; 
         }
 

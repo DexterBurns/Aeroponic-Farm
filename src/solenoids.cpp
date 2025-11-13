@@ -51,10 +51,10 @@ void setSolenoid(int solenoid, int time_delay){
 
   digitalWrite(solenoid, HIGH);
   Serial.printf("Solenoid %d is on.\n", solenoid);
-  delay(time_delay);
+  vTaskDelay(time_delay);
   digitalWrite(solenoid, LOW);
   Serial.printf("Solenoid %d is off.\n", solenoid);
-  delay(time_delay);
+  vTaskDelay(time_delay);
 
 }
 
@@ -66,7 +66,7 @@ void activateAllSolenoids(int time){
   digitalWrite(SOLENOID_3, HIGH);
   digitalWrite(SOLENOID_4, HIGH);
 
-  delay(time);
+  vTaskDelay(time);
 
   digitalWrite(SOLENOID_1, LOW);
   digitalWrite(SOLENOID_2, LOW);

@@ -3,6 +3,7 @@
 #include "motor.h"
 #include "ptransducer.h"
 #include "serialComms.h"
+#include "solenoids.h"
 #include "tasks.h"
 
 // Define buzzer pin
@@ -60,22 +61,29 @@ void loop() {
 
     Serial.printf("Start button has been pressed. State: %d\n", readButton()); //ONce start button has been pressed.
     int task_msg, task_time = readFromSerial(); //Get the task and task time 
-    int runnerResult = taskParser(task_msg, task_time); //Get which task it is we're asking for.
+    int runnerResult = taskParser(task_msg); //Get which task it is we're asking for.
 
     //Command picked was successful
     if(runnerResult == 1){
-      //Run the RTOS node and task with that node.
+      
+      //Setting task parameters 
+      task1_parameters.task_chosen = task_msg;
+      task1_parameters.task_time = task_time;
 
       //flag to make sure we dont run the task twice
       if(task1_parameters.task_state == false){
         //Creating a separate FreeRTOS task to run the task for the system we want. 
         xTaskCreate(task1, "Task 1", 2048, &task1_parameters, 5, NULL);
+        task1_parameters.task_state = true;
 
+      }
+
+      else if(task1_parameters.task_state == true){
+        Serial.printf("Task Still running. Please Wait");
       }
       
     }
 
-    delay(2000); //Delay to let the system settle
   }
   
   //If start pin in HIGH (button is unpressed) we loop until it is
@@ -91,7 +99,7 @@ void loop() {
 void task1(void *parameters){
 
   TaskData *task_data = (TaskData *)parameters; //Casting back to our original type
-  int parser_response = taskParser(task_data->task_chosen, task_data->task_time); //Calling the task we want performed.
+  int parser_response = taskRunner(task_data->task_chosen, task_data->task_time); //Calling the task we want performed.
 
   if(parser_response == 1){
     Serial.println("Successful run.Closing RTOS Task.\n");
@@ -100,6 +108,8 @@ void task1(void *parameters){
   else{
     Serial.println("Failed run. Closing RTOS Task.\n");
   }
+
+  task_data->task_state = false;
   
 }
 

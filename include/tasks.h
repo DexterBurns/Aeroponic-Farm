@@ -15,6 +15,8 @@ enum Task {
     MAX_PSI_TEST,
 };
 
-int taskParser(int, int);
+int taskRunner(int, int);
+
+int taskParser(int);
 
 #endif
