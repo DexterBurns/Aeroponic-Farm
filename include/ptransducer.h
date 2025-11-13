@@ -10,4 +10,10 @@ int readTransducer();
 // Function to make a moving average of the last five transducer readings
 int avgdTransducerReadings();
 
+void testPSILimits_debug(unsigned long, int);
+
+// Function to help facilitate getting the ptransducer values
+// and matching it with the pressure read on the manual pressure reader
+void config_pTransducer_debug(int);
+
 #endif

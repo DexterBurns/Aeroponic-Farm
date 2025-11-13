@@ -3,6 +3,7 @@
 #include "ptransducer.h"
 #include "motor.h"
 #include "button.h"
+#include "solenoids.h"
 
 // Define ADC Pin for the pressure pump
 #define TRANSDUCER_PIN 10
@@ -48,17 +49,15 @@ We should be outputting the readings to the serial monitor as well. So we can kn
 
 void testPSILimits_debug(unsigned long start_time, int duration){
 
-    // Convert seconds to milliseconds
-    duration = duration*1000;
-
     // while we are under the duration limit. keep the motor on, and listen for the signal to turn it off
-    while( millis() < (start_time + duration) ){
+    while( millis() - start_time < (unsigned long)duration){
         
         // Keep the motor running
         startMotor();
+        Serial.println("Don't forget to press button for emergency stop!\n");
         
         // Check pressure to make sure it doesnt overpressurize. Add this later.
-        
+
         // Listen for button press to interrupt the pressurization
         if(readButton() == LOW){
             stopMotor();
@@ -69,6 +68,55 @@ void testPSILimits_debug(unsigned long start_time, int duration){
 
 }
 
+/* Goal of this function is to have the system repressurize itself repeatedly 
+so that we can read the manual pressure and associate it with a digital value in our code. 
+1. Turn motor on until button press, to get to the pressure we want.
+2. Motor will turn on for x seconds, and then stay off for x*8 seconds. (number is arbitrary)
+3. Print to serial what the digital pressure transducer is reading, during all of this. */
+void  config_pTransducer_debug(int on_duration){
+
+    int off_duration = on_duration*8;
+    // converting ms to seconds, just for ease of use
+    int on_duration_sec = on_duration/1000;
+    int off_duration_sec = (on_duration*8)/1000;
+    bool f_flag = true; //flag that breaks the loop
+    bool motor_on_flag = true;
+    int count = 0;
+    int delay = 100; //how much we want the system to delay every cycle
+
+    while(f_flag == true){
+
+        if(motor_on_flag == true){
+            for(int count = 0; count < (on_duration/delay); count++){
+                startMotor();
+                int p = readTransducer();
+                Serial.printf("Pressure Reading: %d\n", p);
+                if(readButton() == LOW){f_flag = false; break;}
+                vTaskDelay(delay); //delay task by 100ms to let other system functions run
+            }
+            motor_on_flag = false; //On cycle complete, turn motor off 
+        }
+
+        else if(motor_on_flag ==false){ //motor has finished the on cycle, now time for off cycle
+            for(int count = 0; count < (off_duration/delay); count++){
+                stopMotor();
+                int p = readTransducer();
+                Serial.printf("Pressure Reading: %d\n", p);
+                if(readButton() == LOW){f_flag = false; break;}
+                vTaskDelay(delay); //delay task by 100ms to let other system functions run
+            }
+            motor_on_flag = true; //off-cycle complete, time to turn motor back on
+        }
+
+        else if(f_flag == false){
+            f_flag = false;
+            break; 
+        }
+
+    }
+    //Don't forget, if we break, we must let the pressure in the system out.
+    activateAllSolenoids(10000);
+}
 
 // Add function that interrupts everything to repressurize system again
 

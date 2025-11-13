@@ -1,56 +1,57 @@
 #include <Arduino.h>
 #include "tasks.h"
-
-// Add all new functionality to this. might be obsolete now
-enum Task {
-    OPEN_ALL_SOLENOIDS,
-    OPEN_SOLENOID_1,
-    OPEN_SOLENOID_2,
-    OPEN_SOLENOID_3,
-    OPEN_SOLENOID_4,
-    START_MOTOR,
-    MAX_PSI_TEST,
-};
+#include "solenoids.h"
+#include "motor.h"
+#include "button.h"
+#include "ptransducer.h"
 
 
 // Function to figure out which task was requested
-int taskRunner(int chosen_task, int task_time){
+int taskParser(int chosen_task, int task_time){
 
     switch(chosen_task) {
-        case 0:
+        case OPEN_ALL_SOLENOIDS:
             // code block
             Serial.println("Open all solenoids chosen.\n");
-            
+            activateAllSolenoids(task_time);
             break;
 
-        case 1:
+        case OPEN_SOLENOID_1:
             // code block
             Serial.println("Open solenoid 1 chosen.\n");
+            setSolenoid(1,task_time);
             break;
-        case 2:
+
+        case OPEN_SOLENOID_2:
             Serial.println("Open solenoid 2 chosen.\n");
+            setSolenoid(2,task_time);
             break;
 
-        case 3:
+        case OPEN_SOLENOID_3:
             Serial.println("Open solenoid 3 chosen.\n");
+            setSolenoid(3,task_time);
             break;
 
-        case 4:
+        case OPEN_SOLENOID_4:
             Serial.println("Open solenoid 4 chosen.\n");
+            setSolenoid(4,task_time);
             break;
 
-        case 5:
+        case START_MOTOR:
             Serial.println("Start Motor chosen.\n");
+            activateMotorWithDelay(task_time);
             break;
 
-        case 6:
+        case MAX_PSI_TEST:
             Serial.println("Max PSI pressure test chosen.\n");
+            testPSILIMI
             break;
         
         default:
             // code block
             Serial.println("No matching command. Try again.\n");
             return -1;
-            
         }
+        Serial.println("Task Ran Successfully.\n");
+        return 1;
 }

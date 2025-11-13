@@ -50,3 +50,5 @@ Serial Comms:
     (Test,Duration) Is the format to use for running a test. May need to store the type of test based on the integer received. 
 
             
+Could probably make it so that a node runs whatever tsk that needs to happen and the main loop just checksthe state of the button.
+When that state changes, during a task execution it restarts the whole system. 

@@ -8,6 +8,7 @@ void initMotor(){
 
   // Setting pinmode of motor relay 
   pinMode(MOTOR_RELAY, OUTPUT);
+  digitalWrite(MOTOR_RELAY, LOW);
 
 }
 
@@ -23,11 +24,20 @@ void stopMotor(){
 // Activate the motor for a certain amount of time 
 void activateMotorWithDelay(int time_ms){
 
+  // get time started
+  unsigned long start_time = millis();
+  unsigned long stop_time = start_time + time_ms;
+
   startMotor();
-
-  delay(time_ms);
-
+  vTaskDelay(pdMS_TO_TICKS(time_ms)); // Delaying task using RTOS. Saves CPU cycles
   stopMotor();
+
 }
+
+// Activate motor with delay using millis()
+
+
+
+
 
 
