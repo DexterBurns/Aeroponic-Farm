@@ -93,7 +93,7 @@ void  config_pTransducer_debug(int on_duration){
         if(motor_on_flag == true){
             for(int count = 0; count < (on_duration/delay); count++){
                 startMotor();
-                int p = readTransducer();
+                int p = readTransducer(TRANSDUCER_PIN);
                 Serial.printf("Pressure Reading: %d\n", p);
                 if(readButton() == LOW){f_flag = false; break;}
                 vTaskDelay(pdMS_TO_TICKS(delay)); //delay task by 100ms to let other system functions run
@@ -104,7 +104,7 @@ void  config_pTransducer_debug(int on_duration){
         else if(motor_on_flag ==false){ //motor has finished the on cycle, now time for off cycle
             for(int count = 0; count < (off_duration/delay); count++){
                 stopMotor();
-                int p = readTransducer();
+                int p = readTransducer(TRANSDUCER_PIN);
                 Serial.printf("Pressure Reading: %d\n", p);
                 if(readButton() == LOW){f_flag = false; break;}
                 vTaskDelay(pdMS_TO_TICKS(delay)); //delay task by 100ms to let other system functions run

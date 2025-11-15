@@ -55,7 +55,7 @@ int readFromSerial(){
 
                     if(time_msg_flag == false){
                         Serial.println("Enter the time you want the task to run: \n");
-                        time_msg_flag == true;
+                        time_msg_flag = true;
                     }
 
                     // If there is something in the serial buffer, means the time was sent
