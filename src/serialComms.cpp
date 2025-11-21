@@ -7,8 +7,8 @@ table for all the meanings of the functions that I'd like to happen during testi
 
 // Delimeter for the text received
 char *delimiter = ",";
-int task_value;
-int task_time; 
+String task_value;
+String task_time; 
 
 
 void serialCommsInit(){
@@ -43,7 +43,32 @@ int readFromSerial(){
         // If we got a message, now we ask for the time to perform the task 
         if(Serial.available() > 0 ){
             // Message is consumed, serial available should read -1 now
-            task_value = Serial.read(); // Consumed message should be the task to perform
+            task_value = Serial.readStringUntil('\n'); // Consumed message should be the task to perform
+            int int_task_value = task_value.toInt();
+
+            // Logic to check and make sure user actually wants task 0 and not accidentally
+            // activating task 0 because .toInt has failed
+            if (int_task_value == 0){ 
+                Serial.println("Task value is 0. Did you mean to do this? 1 == yes, 0 == no: \n");
+                bool user_ans = false;
+                long user_resp;
+                while (user_ans == false)
+                {
+                    vTaskDelay(pdMS_TO_TICKS(100)); //Delay to reduce system resources
+                    if(Serial.available() > 0){ //If the user has responded
+                        user_resp = Serial.parseInt(); //consume the response
+                        if(user_resp == 1){
+                            Serial.println("Alright, Continuing with task 0 then.\n"); //continue with the task, as user meant to use task 0
+                            user_ans = true;
+                        }
+                        else{
+                            Serial.println("Error occured in task parsing, user did not mean to use task 0. Returning to start state. \n");
+                            return -1; 
+                        }
+                    }
+                }
+            } 
+
             task_msg_rec = true;
 
             //Once we got the task, time to ask for the time
@@ -63,7 +88,6 @@ int readFromSerial(){
 
                         task_time = Serial.read();
                         time_msg_rec = true;
-                        break; //Break the loop once we have gotten our time message
                     }
 
                 }
