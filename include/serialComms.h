@@ -5,8 +5,8 @@
 #include <Arduino.h>
 
 void SerialCommsInit();
-int readFromSerial();
-
+int readFromSerial(int&, int&);
+void flushReceiveBuffer();
 
 
 #endif

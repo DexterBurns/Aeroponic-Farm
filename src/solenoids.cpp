@@ -23,6 +23,37 @@ void initSolenoids(){
 }
 
 
+// Function to set individual solenoids with no timer
+void setSolenoid_nodelay(int solenoid){
+
+  switch(solenoid)
+  {
+  case 1:
+    solenoid = SOLENOID_1;
+    break;
+
+  case 2:
+    solenoid = SOLENOID_2;
+    break;
+
+  case 3:
+    solenoid = SOLENOID_3;
+    break;
+
+  case 4:
+    solenoid = SOLENOID_4;
+    break;
+  
+  default:
+    Serial.println("Solenoid does not exist.");
+    break;
+  }
+
+  digitalWrite(solenoid, HIGH);
+
+}
+
+
 // Function to set individual solenoids with a timer
 void setSolenoid(int solenoid, int time_delay){
 
@@ -51,10 +82,10 @@ void setSolenoid(int solenoid, int time_delay){
 
   digitalWrite(solenoid, HIGH);
   Serial.printf("Solenoid %d is on.\n", solenoid);
-  vTaskDelay(time_delay);
+  vTaskDelay(pdMS_TO_TICKS(time_delay));
   digitalWrite(solenoid, LOW);
   Serial.printf("Solenoid %d is off.\n", solenoid);
-  vTaskDelay(time_delay);
+  vTaskDelay(pdMS_TO_TICKS(time_delay));
 
 }
 
@@ -66,7 +97,7 @@ void activateAllSolenoids(int time){
   digitalWrite(SOLENOID_3, HIGH);
   digitalWrite(SOLENOID_4, HIGH);
 
-  vTaskDelay(time);
+  vTaskDelay(pdMS_TO_TICKS(time));
 
   digitalWrite(SOLENOID_1, LOW);
   digitalWrite(SOLENOID_2, LOW);

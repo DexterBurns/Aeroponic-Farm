@@ -84,6 +84,6 @@ int taskParser(int chosen_task){
         default:
             return -1;
         }
-        Serial.println("Task Ran Successfully.\n");
+        Serial.println("Task Picked Successfully.\n");
         return 1;
 }

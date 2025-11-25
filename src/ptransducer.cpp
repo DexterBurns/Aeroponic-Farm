@@ -29,19 +29,14 @@ void initTransducer(){
 }
 
 // Function to read transducer value
-int readTransducer(int pin) {
+int readTransducer() {
 
-    int pressure = analogRead(pin);
+    int pressure = analogRead(TRANSDUCER_PIN);
 
     return pressure;
 
 }
 
-// Function to call that will always update the moving average
-int avgdTransducerReadings(){
-    int current_pressure = avgPressure.reading(readTransducer(TRANSDUCER_PIN));
-    return current_pressure;
-}
 
 // Function to send pressure data to seral monitor
 
@@ -51,19 +46,21 @@ We should be outputting the readings to the serial monitor as well. So we can kn
 
 void testPSILimits_debug(unsigned long start_time, int duration){
 
+    bool button_state = HIGH;
     // while we are under the duration limit. keep the motor on, and listen for the signal to turn it off
     while( millis() - start_time < (unsigned long)duration){
         
         // Keep the motor running
         startMotor();
         Serial.println("Don't forget to press button for emergency stop!\n");
+        button_state = readButton();
         
         // Check pressure to make sure it doesnt overpressurize. Add this later.
 
         // Listen for button press to interrupt the pressurization
-        if(readButton() == LOW){
+        if(button_state == LOW){
             stopMotor();
-            break;
+            return;
         }
 
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -87,15 +84,17 @@ void  config_pTransducer_debug(int on_duration){
     bool motor_on_flag = true;
     int count = 0;
     int delay = 100; //how much we want the system to delay every cycle
+    bool button_state = LOW;
 
     while(f_flag == true){
 
         if(motor_on_flag == true){
             for(int count = 0; count < (on_duration/delay); count++){
                 startMotor();
-                int p = readTransducer(TRANSDUCER_PIN);
+                int p = readTransducer();
                 Serial.printf("Pressure Reading: %d\n", p);
-                if(readButton() == LOW){f_flag = false; break;}
+                button_state = readButton();
+                if(button_state == LOW){f_flag = false; break;}
                 vTaskDelay(pdMS_TO_TICKS(delay)); //delay task by 100ms to let other system functions run
             }
             motor_on_flag = false; //On cycle complete, turn motor off 
@@ -104,9 +103,10 @@ void  config_pTransducer_debug(int on_duration){
         else if(motor_on_flag ==false){ //motor has finished the on cycle, now time for off cycle
             for(int count = 0; count < (off_duration/delay); count++){
                 stopMotor();
-                int p = readTransducer(TRANSDUCER_PIN);
+                int p = readTransducer();
                 Serial.printf("Pressure Reading: %d\n", p);
-                if(readButton() == LOW){f_flag = false; break;}
+                button_state = readButton();
+                if(button_state == LOW){f_flag = false; break;}
                 vTaskDelay(pdMS_TO_TICKS(delay)); //delay task by 100ms to let other system functions run
             }
             motor_on_flag = true; //off-cycle complete, time to turn motor back on

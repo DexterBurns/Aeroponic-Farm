@@ -16,12 +16,16 @@ int default_time = 2000; //placeholder of 2 seconds for anything that might need
 
 TaskHandle_t task1_handle = NULL; // Handler for task 
 
+bool state_flag = false; //for the button state message
+
 // put function declarations here:
 void setSolenoid(int, int);
 void activateMotor(int, int);
 void activateAllSolenoids(int);
 void activate1by1Solenoids(int);
 bool getStartState(int);
+int state_count = 0;
+bool bttn_state = HIGH; // Initial state of button
 
 // variables related RTOS Task1
 void task1(void *parameter);
@@ -31,6 +35,9 @@ struct TaskData {
   int task_time = 0;
   bool task_state = false;
 } task1_parameters;
+
+int pressure_reading = 0;
+
 
 void setup() {
 
@@ -47,24 +54,40 @@ void setup() {
   //Setting pinmode of Start pin
   initButton();
 
+  //Init of all functions
+  initSolenoids();
+  initTransducer();
+  initMotor();
+
   pinMode(BUZZER_PIN, OUTPUT);
   tone(BUZZER_PIN, 1000);
   delay(250);
   noTone(BUZZER_PIN);
+
+
+  
 }
 
 // Keep in mind, all functions will be run via FreeRTOS. 
 void loop() {
 
+  bttn_state = readButton();
   //If start pin is LOW (button pressed) we can start the system. 
-  if (readButton() == LOW){
+  if (bttn_state == LOW){
 
-    Serial.printf("Start button has been pressed. State: %d\n", readButton()); //ONce start button has been pressed.
-    int task_msg, task_time = readFromSerial(); //Get the task and task time 
+    Serial.printf("Start button has been pressed. State: %d\n", bttn_state); //ONce start button has been pressed.
+    int task_msg;
+    int task_time;
+    int comm_result = 0;
+    comm_result = readFromSerial(task_msg, task_time); //Get the task and task time 
     int runnerResult = taskParser(task_msg); //Get which task it is we're asking for.
 
-    //Command picked was successful
-    if(runnerResult == 1){
+    if (comm_result == -1){ //message failed
+      Serial.printf("Comms have failed, returning back to wait mode.");
+    }
+  
+    //Command picked was successful and comms successful
+    else if(runnerResult == 1 && comm_result != -1){
       
       //Setting task parameters 
       task1_parameters.task_chosen = task_msg;
@@ -73,7 +96,7 @@ void loop() {
       //flag to make sure we dont run the task twice
       if(task1_parameters.task_state == false){
         //Creating a separate FreeRTOS task to run the task for the system we want. 
-        xTaskCreate(task1, "Task 1", 2048, &task1_parameters, 5, NULL);
+        xTaskCreate(task1, "Task 1", 4096, &task1_parameters, 5, NULL);
         task1_parameters.task_state = true;
 
       }
@@ -84,16 +107,27 @@ void loop() {
       
     }
 
+    else{
+      Serial.printf("Comms Unuseccessful. Restarting.");
+    }
+
+    state_flag = false; //We can print the button state again now.
+
   }
   
   //If start pin in HIGH (button is unpressed) we loop until it is
-  else if (readButton() == HIGH)
+  else if (bttn_state == HIGH)
   {
-    bool start_state = readButton();
-    Serial.printf("Start Button State: %d\n", start_state);
+    
+      Serial.printf("Start Button State: %d\n", bttn_state);
+      state_flag = true;
+      pressure_reading = readTransducer();
+      Serial.printf("Pressure Reading: %d\n", pressure_reading);
+      delay(500);
+
+    
+    
   }
-
-
 }
 
 void task1(void *parameters){
@@ -110,6 +144,8 @@ void task1(void *parameters){
   }
 
   task_data->task_state = false;
+
+  vTaskDelete(NULL); //delete task after we are done with it
   
 }
 

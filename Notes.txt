@@ -52,3 +52,7 @@ Serial Comms:
             
 Could probably make it so that a node runs whatever tsk that needs to happen and the main loop just checksthe state of the button.
 When that state changes, during a task execution it restarts the whole system. 
+
+Testing Tasks:
+Need the Button state printed and the pressure printed.
+Perform max psi test, make sure it stops when button is pressed again for safety.
