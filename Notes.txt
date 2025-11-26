@@ -56,3 +56,29 @@ When that state changes, during a task execution it restarts the whole system.
 Testing Tasks:
 Need the Button state printed and the pressure printed.
 Perform max psi test, make sure it stops when button is pressed again for safety.
+
+Function to find out min and max psi value, no matter the ADC value or attenuation. This should be a debug function
+    Open solenoids for a bit and get the pressure of the system to 0psi. 
+    Once system at 0 psi, close solenoids and take a moving average of the ADC values at 0 psi for about 10-20 seconds.
+    Once lower psi value acquired, start pressurizing the motor.
+    While motor is being pressurized, listen out for button press, and stop pressurizing when the button is pressed. (Button should be pressed when 100 psi reached)
+    Once button pressed and we reached 100 psi, get a moving average/average of the ADC so we can know which ADC value/range correpsonds to 100 psi. 
+    Once we have those min and max values, we can create a map; (Lower_ADCval, Higher_ADCval, 0psi, 100psi);
+
+Function that perpetually calculates pressure using the map, and print to terminal. This should be an RTOS task.
+We should probably pass it by reference whenever a function needs to know what the pressure is currently
+    Should make movingAvg object.
+    Read Transducer ADC, feed into movingAvg object and get avgdValue.
+    Feed Avgdvalue into map. Return that value, and that should give us our current pressure
+
+24Hr cycle function - function to manage misting over the period of 24hours. Misting in daytime is different that misting at night. How do we characterize this? 
+Should this be a button to switch between the two? Or what can we do to let the system know it is nighttime/daytime? I think for now, I'll manually change day/night cycles 
+    Function that should be an RTOS task
+    It should take, misting cycle time in minutes (how often to mist). Misting period (How long to mist). Should listen for button press to edit these parameters. 
+    Pressurizes system when under a certain pressure threshold, and goes back to misting cycle. If statement here probably.
+
+Function to pressurize until MAX pressure reached
+
+Function to print task list. This should be what the cycle function calls, because the button press will be a sign the user wants to change some Functionality.
+
+Next task is to add the new functionality to the Serial command list

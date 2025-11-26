@@ -4,10 +4,11 @@
 #include "motor.h"
 #include "button.h"
 #include "ptransducer.h"
+#include "scheduler.h"
 
 
 // Function to figure out which task was requested and running it.
-int taskRunner(int chosen_task, int task_time){
+int taskRunner(int chosen_task, int task_time, int misting_interval, int misting_length, bool day_night_flag){
 
     switch(chosen_task) {
         case OPEN_ALL_SOLENOIDS:
@@ -46,6 +47,16 @@ int taskRunner(int chosen_task, int task_time){
             Serial.println("Max PSI pressure test chosen.\n");
             config_pTransducer_debug(task_time);
             break;
+
+        case PRESSURE_CALIBRATION:
+            Serial.println("Pressure Calibration test chosen.\n");
+            findPressureRangeWithADC();
+            break;
+
+        case DAY_NIGHT_CYCLE:
+            Serial.println("DAY/NIGHT Cycle Function chosen.\n");
+            dayNightMistingCycle(misting_interval, misting_length, day_night_flag);
+            break;
         
         default:
             // code block
@@ -79,6 +90,13 @@ int taskParser(int chosen_task){
             break;
 
         case MAX_PSI_TEST:
+            break;
+
+        case PRESSURE_CALIBRATION:
+            break;
+
+        case DAY_NIGHT_CYCLE:
+            return 8; //return this so we know to ask for more information
             break;
         
         default:

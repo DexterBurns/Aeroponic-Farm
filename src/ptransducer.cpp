@@ -4,46 +4,191 @@
 #include "motor.h"
 #include "button.h"
 #include "solenoids.h"
+#include <Preferences.h>
 
 // Define ADC Pin for the pressure pump
 #define TRANSDUCER_PIN 10
 
-// Upper and lower limit for pressure in the system
-#define PSI_UPPER_LIMIT 90
-#define PSI_LOWER_LIMIT 80
+/* PREFS, saved memory, be careful editing this!*/
+// Save min ADC pressure value, max ADC pressure value
 
-int off_duration_scale = 7;
+int off_duration_scale = 7; // Scale for repressurizing debug function
 
-// Object to hold the moving average
-movingAvg avgPressure(10);
+// loading and setup for saving the min and max pressures calculated for 
+Preferences save_data;
+save_data.begin("pressure_min_max", false); //activates the namespace and inits it
 
+// Scope to constructor, and define variables
+pressureStruct::pressureStruct()
+  : currentPressure_ADC(20),
+    currentPressure_PSI(20),
+    minPressure_ADC(20),
+    maxPressure_ADC(20)
+{
+    minPressure_ADC.begin();
+    maxPressure_ADC.begin();
+    currentPressure_ADC.begin();
+    currentPressure_PSI.begin();
+
+    // See if there is a previous value for the ADC's minimum and maximum pressures
+    int minPressure = save_data.getInt("minADC", -1); 
+    int maxPressure = save_data.getInt("maxADC", -1);
+
+    if(minPressure != -1){ //if the value does exist, replace the minPressure with it
+        adc_minPressure = minPressure;
+    }
+
+    if(maxPressure != -1){ //if the value does exist, replace the maxPressure with it
+        adc_maxPressure = maxPressure;
+    }
+}
+// Make the global instance volatile
+volatile pressureStruct pressureData;
+
+// Initialize transducer
 void initTransducer(){
 
     analogReadResolution(12);
     // set ADC pin 35 attenuation. Voltage after the divider should be around 2.5 volts
-    analogSetPinAttenuation(TRANSDUCER_PIN, ADC_6db);
+    analogSetPinAttenuation(TRANSDUCER_PIN, ADC_11db);
 
     //Setting pinmode of pressure pin
     pinMode(TRANSDUCER_PIN, INPUT);
 
 }
 
-// Function to read transducer value
+// Function to read transducer value. Returns ADC value
 int readTransducer() {
-
     int pressure = analogRead(TRANSDUCER_PIN);
-
     return pressure;
+}
+
+// Maps the pressure read to the calibrated range. Receives an ADC value, returns psi
+int pressureMap(int pressure){
+    // Mapping ADC pressure to PSI pressure.
+    int psi_pressure = map(pressure, pressureData.adc_minPressure, pressureData.adc_maxPressure, pressureData.psi_minPressure, pressureData.psi_maxPressure);
+    return psi_pressure;
+}
+
+int getPressureInPSI(){
+    int psi = pressureData.currentPressure_ADC.getAvg();
+    return psi;
+}
+
+// Function that is perpetually run by the pressure task to always have pressure calculated and ready to go.
+int calculatePressure(){
+
+    // Get pressure and feed it into moving avg, and get the current avg pressure for ADC values
+    int pressure = readTransducer(); // get pressure in ADC value
+    pressureData.currentPressure_ADC.reading(pressure);// feed it into the moving average
+    int avgd_press_from_adc = pressureData.currentPressure_ADC.getAvg();
+
+    // Get pressure and feed into moving PSI average
+    int avg_pressure_in_psi = pressureMap(avgd_press_from_adc);
+    pressureData.currentPressure_PSI.reading(avg_pressure_in_psi);
+    vTaskDelay(pdMS_TO_TICKS(50)); //Ease on cpu cycles
+
+    return 1; // return psi value of the averaged pressure.
 
 }
 
+// Function to pressurize system to max. Not a Task, but for 24hr cycle
+int pressurizeToMaxPSI(){
+    
+    bool state_flag = false;
+    bool button_state = readButton();
+    startMotor();
 
-// Function to send pressure data to seral monitor
+    Serial.println("Press button for emergency stop, if needed!\n");
 
-// Debug function to run the motor to get to the system's upper limit. 
-/* This function needs to keep running the motor until we get to the upper limit. Once we are there, stop the motor. 
-We should be outputting the readings to the serial monitor as well. So we can know exactly how actual psi compares to readings in digital values.*/
+    while(state_flag == false){
 
+        button_state = readButton();
+        int curr_Pressure = pressureData.currentPressure_ADC;
+
+        if(curr_Pressure >= pressureData.adc_maxPressure){
+            state_flag = true;
+        }
+
+        if( (state_flag  == true) || button_state == LOW){
+            //Stop motor
+            stopMotor();
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+    
+}
+
+// Function to find the min and max pressure of the system. Should save values to prefs. 
+int findPressureRangeWithADC(){
+
+    Serial.println("Now Performing Pressure Calibration....");
+
+    // 3 Beep alarm to signify test is starting.
+    for(int x = 0; x < 3; x++){
+        tone(21, 500); //never do this again. create a function next time
+        vTaskDelay(pdMS_TO_TICKS(250));
+    }
+
+    // Open the solenoids and depressurize the system for about 20 seconds
+    activateAllSolenoids(20000);
+    bool button_state = HIGH;
+
+    Serial.println("Now recording Lower Pressures....");
+    vTaskDelay(pdMS_TO_TICKS(5000));
+    // Record current pressure ADC value while system unpressurized. For a 10 seconds, every 50 ms. Doing for so long for the system to settle. 
+    for (int x = 0; x < 200; x++){
+        int pressure = readTransducer();
+        Serial.printf("Current Unpressurized ADC Reading:%d\n", pressure);
+        pressureData.minPressure_ADC.reading(pressure);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    Serial.println("Now Performing Pressurization. Please press button when ready to STOP at 100PSI!");
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    //Pressurize system and listen for button press to stop pressurizing
+    while(button_state == HIGH){
+        int pressure = readTransducer();
+        startMotor();
+        button_state = readButton();
+        Serial.printf("Current Pressurizing ADC Reading:%d\n", pressure);
+        vTaskDelay(pdMS_TO_TICKS(50));
+
+        if(button_state == LOW){ //This is just to be safe...
+            break;
+        }
+    }
+
+    Serial.println("Pressurization complete! Now recording ADC values for 100 psi!");
+    vTaskDelay(pdMS_TO_TICKS(3000));
+
+    // Record current pressure ADC value while system unpressurized. For a 10 seconds, every 50 ms. Doing for so long for the system to settle. 
+    for (int x = 0; x < 200; x++){
+        int pressure = readTransducer();
+        Serial.printf("Current Max Pressure ADC Reading:%d\n", pressure);
+        pressureData.maxPressure_ADC.reading(pressure);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    // Setting the averages we calculated to the global pressureData structure. 
+    pressureData.adc_minPressure = pressureData.minPressure_ADC.getAvg(); // Get calculated moving average
+    pressureData.adc_maxPressure = pressureData.maxPressure_ADC.getAvg(); // Get max calculated moving average
+
+    //Also save these to prefs
+    save_data.putInt("minADC", pressureData.adc_minPressure);
+    save_data.putInt("maxADC", pressureData.adc_maxPressure);
+
+    return 1;
+
+}
+
+/* --------------------------------------------------------------Debug Functions-----------------------------------------------------------------------------------*/
+
+/* Functions that probably wont be used for the full system functionality, but rather during development to help facilitate the actual functions that will be used */
+
+// Function to turn motor on and only back off when button is pressed. 
 void testPSILimits_debug(unsigned long start_time, int duration){
 
     bool button_state = HIGH;
@@ -69,11 +214,16 @@ void testPSILimits_debug(unsigned long start_time, int duration){
 
 }
 
+
+
+
 /* Goal of this function is to have the system repressurize itself repeatedly 
 so that we can read the manual pressure and associate it with a digital value in our code. 
 1. Turn motor on until button press, to get to the pressure we want.
 2. Motor will turn on for x seconds, and then stay off for x*8 seconds. (number is arbitrary)
 3. Print to serial what the digital pressure transducer is reading, during all of this. */
+// This function wqas just a safety measure during development to see how high we could
+// pressurize the system without 
 void  config_pTransducer_debug(int on_duration){
 
     int off_duration = on_duration*off_duration_scale;

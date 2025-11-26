@@ -34,7 +34,7 @@ void activateMotorWithDelay(int time_ms){
 
 }
 
-// Activate motor with delay using millis()
+//Function to pressurize until maximum pressure reached
 
 
 

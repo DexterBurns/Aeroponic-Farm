@@ -6,6 +6,7 @@
 
 void SerialCommsInit();
 int readFromSerial(int&, int&);
+int readFromSerialforDayandNightParameters(int&, int&, bool&);
 void flushReceiveBuffer();
 
 

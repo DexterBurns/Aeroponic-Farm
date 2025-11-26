@@ -1,4 +1,4 @@
-// Motor Debug Header Files
+//Tasks Header Files
 #ifndef TASKS_H
 #define TASKS_H
 
@@ -13,9 +13,11 @@ enum Task {
     OPEN_SOLENOID_4,
     START_MOTOR,
     MAX_PSI_TEST,
+    PRESSURE_CALIBRATION,
+    DAY_NIGHT_CYCLE,
 };
 
-int taskRunner(int, int);
+int taskRunner(int, int, int, bool);
 
 int taskParser(int);
 

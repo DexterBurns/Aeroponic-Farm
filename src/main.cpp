@@ -5,14 +5,13 @@
 #include "serialComms.h"
 #include "solenoids.h"
 #include "tasks.h"
+#include "scheduler.h"
 
 // Define buzzer pin
 #define BUZZER_PIN 21
 
 bool motor_flag = false;
 uint32_t curr_pressure = 0;
-
-int default_time = 2000; //placeholder of 2 seconds for anything that might need a timer 
 
 TaskHandle_t task1_handle = NULL; // Handler for task 
 
@@ -36,7 +35,9 @@ struct TaskData {
   bool task_state = false;
 } task1_parameters;
 
-int pressure_reading = 0;
+int misting_interval = 300000; //5 minutes in milliseconds
+int misting_time = 5000; //5 seconds
+bool day_night_flag;
 
 
 void setup() {
@@ -64,7 +65,8 @@ void setup() {
   delay(250);
   noTone(BUZZER_PIN);
 
-
+  // Create RTOS Task that will constantly calculate and monitor pressure
+  xTaskCreate(calculatePressureTask, "Pressure Calc", 2048, NULL, 4, NULL);
   
 }
 
@@ -107,8 +109,14 @@ void loop() {
       
     }
 
+    else if(runnerResult == 8){ //we know the day/night task was requested. get more information
+        readFromSerialforDayandNightParameters(misting_interval, misting_time, day_night_flag);
+        dayNightMistingCycle(misting_interval, misting_time, day_night_flag);
+    }
+
     else{
       Serial.printf("Comms Unuseccessful. Restarting.");
+      vTaskDelay(pdMS_TO_TICKS(5000)); //Ease on cpu cycles
     }
 
     state_flag = false; //We can print the button state again now.
@@ -121,12 +129,10 @@ void loop() {
     
       Serial.printf("Start Button State: %d\n", bttn_state);
       state_flag = true;
-      pressure_reading = readTransducer();
+      int pressure_reading = getPressureInPSI(); //might be 0 at start
       Serial.printf("Pressure Reading: %d\n", pressure_reading);
-      delay(500);
+      vTaskDelay(pdMS_TO_TICKS(500));
 
-    
-    
   }
 }
 
@@ -147,5 +153,17 @@ void task1(void *parameters){
 
   vTaskDelete(NULL); //delete task after we are done with it
   
+}
+
+// Task that perpetually calculates pressure in psi
+void calculatePressureTask(){
+
+  for(;;){
+
+    //Calculate Pressure
+    int success = calculatePressure();
+    
+  }
+
 }
 

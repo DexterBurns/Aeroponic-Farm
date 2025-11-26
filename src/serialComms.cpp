@@ -92,6 +92,126 @@ int readFromSerial(int &msg, int &time){
 }
 
 
+// Function to read our command from the serial monitor. 
+int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_time, bool &day_night_flag){
+
+    // Flags for if a msg was received and a time was received
+    bool misting_interval_msg_rec = false;
+    bool misting_time_msg_rec = false;
+    bool day_night_msg_rec = false;
+
+    // status Flags to track when we printed a message for enter a message and enter a time so we dont flood the serial comms
+    bool misting_interval_msg_flag = false;
+    bool misting_time_msg_flag = false;
+    bool day_night_msg_flag = false;
+
+    int misting_length;
+    int misting_value;
+    int day_night_value;
+
+    // Keep looping until a message is received
+    while(misting_interval_msg_rec == false){
+
+        vTaskDelay(pdMS_TO_TICKS(100)); //delay to keep the system from being overworked during the loop.
+        if(misting_interval_msg_flag == false){
+            // Find a way to parse. Maybe do messages separately.
+            flushReceiveBuffer(); //Make sure buffer is clear
+            Serial.println("Enter the cycle misting interval:\n");
+            misting_interval_msg_flag = true;
+        }
+
+        // If we got a message, now we ask for the time to perform the task 
+        if(Serial.available() > 0 ){
+            vTaskDelay(pdMS_TO_TICKS(1000)); 
+            // Message is consumed, serial available should read -1 now
+            misting_value = Serial.parseInt(); // Consumed message should be the task to perform
+            Serial.printf("Misting Interval Received: %d\n", misting_value);
+            flushReceiveBuffer(); //Make sure buffer is clear
+
+            // Logic to check and make sure user actually wants task 0 and not accidentally
+            // activating task 0 because .toInt has failed
+            if (misting_value < 0){ 
+                Serial.println("Misting value is less than 0. Breaking back to start state.\n");
+                return -1;
+            } 
+
+            misting_interval_msg_rec = true;
+
+            //Once we got the misting intervals, time to ask for the time
+            if(misting_interval_msg_rec == true){
+                
+                while(misting_time_msg_rec == false){
+
+                    vTaskDelay(pdMS_TO_TICKS(1000)); //delay to keep the system from being overworked during the loop.
+
+                    if(misting_time_msg_flag == false){
+                        Serial.println("Enter the length of time for misters to be on: \n");
+                        misting_time_msg_flag = true;
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+
+                    }
+
+                    // If there is something in the serial buffer, means the time was sent
+                    if(Serial.available() > 0 ){
+                        misting_length = Serial.parseInt();
+                        Serial.printf("Misting Duration Received: %d\n", misting_length);
+                        misting_time_msg_rec = true;
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                        flushReceiveBuffer(); //Make sure buffer is clear
+                    }
+                    
+                }
+
+            }
+
+            //Since we got the intervals and time, now ask for the day/night
+            if(day_night_msg_rec == false){
+
+                while(day_night_msg_rec){
+
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+
+                    if(day_night_msg_flag == false){
+
+                        Serial.println("Enter if this is day or night cycle(0=day, 1=night)\n");
+                        day_night_msg_flag = true;
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+
+                    // If there is something in the serial buffer, means day/night was sent
+                    if(Serial.available() > 0 ){
+                        day_night_value = Serial.parseInt();
+                        Serial.printf("Day/Night Received: %d\n", misting_length);
+                        misting_time_msg_rec = true;
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                        flushReceiveBuffer(); //Make sure buffer is clear
+                        if(day_night_value >= 1){
+                            day_night_flag = false;
+                        }
+                        else{
+                            day_night_flag = true;
+                        }
+                    }
+
+                }
+            }
+        }
+        
+    }
+
+    misting_interval = misting_value;
+    misting_time = misting_length;
+    return 0;
+}
+
+int askForIntMessage(int &holder){
+
+    while(Serial.available)
+
+}
+
+
+
 void flushReceiveBuffer(){
     while(Serial.available()){
         Serial.read();

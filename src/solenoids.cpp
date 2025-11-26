@@ -7,6 +7,8 @@
 #define SOLENOID_3 42
 #define SOLENOID_4 45
 
+int misting_delay = 1000; //this is the delay needed for the pressure to build up at the nozzle.
+
 void initSolenoids(){
 
   // Setting pinmode of solenoid pins
@@ -85,7 +87,6 @@ void setSolenoid(int solenoid, int time_delay){
   vTaskDelay(pdMS_TO_TICKS(time_delay));
   digitalWrite(solenoid, LOW);
   Serial.printf("Solenoid %d is off.\n", solenoid);
-  vTaskDelay(pdMS_TO_TICKS(time_delay));
 
 }
 
