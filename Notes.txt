@@ -82,3 +82,5 @@ Function to pressurize until MAX pressure reached
 Function to print task list. This should be what the cycle function calls, because the button press will be a sign the user wants to change some Functionality.
 
 Next task is to add the new functionality to the Serial command list
+
+Need to find a better way to log psi, it has too many swings

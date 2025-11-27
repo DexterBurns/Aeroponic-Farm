@@ -5,6 +5,7 @@
 #include "button.h"
 #include "solenoids.h"
 #include <Preferences.h>
+#include "Smoothed.h" // Sensor smoothing library
 
 // Define ADC Pin for the pressure pump
 #define TRANSDUCER_PIN 10
@@ -16,6 +17,9 @@ int off_duration_scale = 7; // Scale for repressurizing debug function
 
 // loading and setup for saving the min and max pressures calculated for 
 Preferences save_data;
+
+/* Smoothing variable */
+Smoothed <int> p_transducer_ADC;
 
 // Scope to constructor, and define variables
 pressureStruct::pressureStruct()
@@ -54,6 +58,7 @@ void initTransducer(){
 
     save_data.begin("press_minmax", false); //activates the namespace and inits it
 
+    /* Calling Data from memory based on last min and max pressure saved.*/
     int adc_minPressure_hold = save_data.getInt("minADC", -1); 
     int adc_maxPressure_hold = save_data.getInt("maxADC", -1);
 
@@ -69,6 +74,8 @@ void initTransducer(){
         pressureData.adc_maxPressure = adc_maxPressure_hold;
     }
 
+    /* Smoothing Functionality*/
+    p_transducer_ADC.begin(SMOOTHED_EXPONENTIAL, 10);
 
 }
 
@@ -95,10 +102,11 @@ int calculatePressure(){
 
     // Get pressure and feed it into moving avg, and get the current avg pressure for ADC values
     int pressure = readTransducer(); // get pressure in ADC value
-    pressureData.currentPressure_ADC.reading(pressure);// feed it into the moving average
+    p_transducer_ADC.add(pressure); //Smoothing sensor value
+    int smoothed_pressure = p_transducer_ADC.get();
+    pressureData.currentPressure_ADC.reading(smoothed_pressure);// feed it into the moving average
     int avgd_press_from_adc = pressureData.currentPressure_ADC.getAvg();
     
-
     // Get pressure and feed into moving PSI average
     int avg_pressure_in_psi = pressureMap(avgd_press_from_adc);
     pressureData.currentPressure_PSI.reading(avg_pressure_in_psi);
