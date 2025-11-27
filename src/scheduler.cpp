@@ -11,7 +11,7 @@
 
 // Upper and lower limit for pressure in the system
 #define PSI_UPPER_LIMIT 100
-#define PSI_LOWER_LIMIT 75
+#define PSI_LOWER_LIMIT 60
 int night_scale = 2; //What to scale misting times by when it is night time.
 int delay_time = 50; //Delay time
 
@@ -32,12 +32,15 @@ int dayNightMistingCycle(int misting_interval, int misting_length, bool day_nigh
             //If the day interval time has passed, then mist and wait the interval time in milliseconds
             setSolenoid(1, misting_length);
             checkPressureAndRepressurize();
+            vTaskDelay(pdMS_TO_TICKS(3000));//Small delay to let pressure stabilize
 
             setSolenoid(2, misting_length);
             checkPressureAndRepressurize();
+            vTaskDelay(pdMS_TO_TICKS(3000));//Small delay to let pressure stabilize
 
             setSolenoid(3, misting_length);
             checkPressureAndRepressurize();
+            vTaskDelay(pdMS_TO_TICKS(3000));//Small delay to let pressure stabilize
 
             setSolenoid(4, misting_length);
             checkPressureAndRepressurize();
@@ -68,12 +71,15 @@ int dayNightMistingCycle(int misting_interval, int misting_length, bool day_nigh
             //If the day interval time has passed, then mist and wait the interval time in milliseconds
             setSolenoid(1, misting_length);
             checkPressureAndRepressurize();
+            vTaskDelay(pdMS_TO_TICKS(3000));//Small delay to let pressure stabilize
 
             setSolenoid(2, misting_length);
             checkPressureAndRepressurize();
+            vTaskDelay(pdMS_TO_TICKS(3000));//Small delay to let pressure stabilize
 
             setSolenoid(3, misting_length);
             checkPressureAndRepressurize();
+            vTaskDelay(pdMS_TO_TICKS(3000));//Small delay to let pressure stabilize
 
             setSolenoid(4, misting_length);
             checkPressureAndRepressurize();
@@ -107,6 +113,7 @@ void checkPressureAndRepressurize(){
 }
 
 void buzzerAlert(int buzzes){
+
 
     for(int x; x <= buzzes; x++){
         pinMode(BUZZER_PIN, OUTPUT);

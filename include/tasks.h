@@ -17,7 +17,7 @@ enum Task {
     DAY_NIGHT_CYCLE,
 };
 
-int taskRunner(int, int, int, bool);
+int taskRunner(int, int, int, int, bool);
 
 int taskParser(int);
 

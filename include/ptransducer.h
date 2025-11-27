@@ -2,6 +2,9 @@
 #ifndef PTRANSDUCER_H
 #define PTRANSDUCER_H
 
+#include <Arduino.h>
+#include <movingAvg.h>
+#include <Preferences.h>
 
 struct pressureStruct {
     movingAvg currentPressure_ADC; //moving avg of pressure in ADC values
@@ -18,7 +21,7 @@ struct pressureStruct {
 };
 
 // For global access
-extern volatile pressureStruct pressureData;
+extern pressureStruct pressureData;
 
 void initTransducer();
 // Function to read transducer in that moment

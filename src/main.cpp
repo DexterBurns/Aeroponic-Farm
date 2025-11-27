@@ -17,12 +17,13 @@ TaskHandle_t task1_handle = NULL; // Handler for task
 
 bool state_flag = false; //for the button state message
 
-// put function declarations here:
+// put function prototypes here:
 void setSolenoid(int, int);
 void activateMotor(int, int);
 void activateAllSolenoids(int);
 void activate1by1Solenoids(int);
 bool getStartState(int);
+void calculatePressureTask(void *parameters);
 int state_count = 0;
 bool bttn_state = HIGH; // Initial state of button
 
@@ -61,7 +62,7 @@ void setup() {
   initMotor();
 
   pinMode(BUZZER_PIN, OUTPUT);
-  tone(BUZZER_PIN, 1000);
+  tone(BUZZER_PIN, 100);
   delay(250);
   noTone(BUZZER_PIN);
 
@@ -75,7 +76,7 @@ void loop() {
 
   bttn_state = readButton();
   //If start pin is LOW (button pressed) we can start the system. 
-  if (bttn_state == LOW){
+  if (bttn_state == LOW && task1_parameters.task_state == false){
 
     Serial.printf("Start button has been pressed. State: %d\n", bttn_state); //ONce start button has been pressed.
     int task_msg;
@@ -100,6 +101,7 @@ void loop() {
         //Creating a separate FreeRTOS task to run the task for the system we want. 
         xTaskCreate(task1, "Task 1", 4096, &task1_parameters, 5, NULL);
         task1_parameters.task_state = true;
+        
 
       }
 
@@ -134,12 +136,17 @@ void loop() {
       vTaskDelay(pdMS_TO_TICKS(500));
 
   }
+
+  else{
+    Serial.println("Task is already running. Please wait until it is finished.");
+    vTaskDelay(pdMS_TO_TICKS(1000)); //Ease on cpu cycles
+  }
 }
 
 void task1(void *parameters){
 
   TaskData *task_data = (TaskData *)parameters; //Casting back to our original type
-  int parser_response = taskRunner(task_data->task_chosen, task_data->task_time); //Calling the task we want performed.
+  int parser_response = taskRunner(task_data->task_chosen, task_data->task_time, 0, 0, false); //Calling the task we want performed.
 
   if(parser_response == 1){
     Serial.println("Successful run.Closing RTOS Task.\n");
@@ -156,7 +163,7 @@ void task1(void *parameters){
 }
 
 // Task that perpetually calculates pressure in psi
-void calculatePressureTask(){
+void calculatePressureTask(void *parameters){
 
   for(;;){
 

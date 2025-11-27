@@ -64,6 +64,7 @@ int taskRunner(int chosen_task, int task_time, int misting_interval, int misting
             return -1;
         }
         Serial.println("Task Ran Successfully.\n");
+        vTaskDelay(pdMS_TO_TICKS(500)); //Ease on cpu cycles
         return 1;
 }
 

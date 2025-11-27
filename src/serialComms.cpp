@@ -167,7 +167,7 @@ int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_t
             //Since we got the intervals and time, now ask for the day/night
             if(day_night_msg_rec == false){
 
-                while(day_night_msg_rec){
+                while(day_night_msg_rec == false){
 
                     vTaskDelay(pdMS_TO_TICKS(1000));
 
@@ -181,8 +181,8 @@ int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_t
                     // If there is something in the serial buffer, means day/night was sent
                     if(Serial.available() > 0 ){
                         day_night_value = Serial.parseInt();
-                        Serial.printf("Day/Night Received: %d\n", misting_length);
-                        misting_time_msg_rec = true;
+                        Serial.printf("Day/Night Received: %d\n", day_night_value);
+                        day_night_msg_rec = true;
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         flushReceiveBuffer(); //Make sure buffer is clear
                         if(day_night_value >= 1){
@@ -204,14 +204,7 @@ int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_t
     return 0;
 }
 
-int askForIntMessage(int &holder){
-
-    while(Serial.available)
-
-}
-
-
-
+// Function to flush the receive buffer
 void flushReceiveBuffer(){
     while(Serial.available()){
         Serial.read();

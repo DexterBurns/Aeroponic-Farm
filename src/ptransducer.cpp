@@ -16,12 +16,11 @@ int off_duration_scale = 7; // Scale for repressurizing debug function
 
 // loading and setup for saving the min and max pressures calculated for 
 Preferences save_data;
-save_data.begin("pressure_min_max", false); //activates the namespace and inits it
 
 // Scope to constructor, and define variables
 pressureStruct::pressureStruct()
-  : currentPressure_ADC(20),
-    currentPressure_PSI(20),
+  : currentPressure_ADC(20), //moving pressure average of last 20 readings
+    currentPressure_PSI(20), //moving pressure average of last 20 readings in psi
     minPressure_ADC(20),
     maxPressure_ADC(20)
 {
@@ -30,20 +29,18 @@ pressureStruct::pressureStruct()
     currentPressure_ADC.begin();
     currentPressure_PSI.begin();
 
+    minPressure_ADC.reading(100);
+    maxPressure_ADC.reading(1000);
+    currentPressure_ADC.reading(1000);
+    currentPressure_PSI.reading(10);
+
     // See if there is a previous value for the ADC's minimum and maximum pressures
-    int minPressure = save_data.getInt("minADC", -1); 
-    int maxPressure = save_data.getInt("maxADC", -1);
+    int adc_minPressure_hold = save_data.getInt("minADC", -1); 
+    int adc_maxPressure_hold = save_data.getInt("maxADC", -1);
 
-    if(minPressure != -1){ //if the value does exist, replace the minPressure with it
-        adc_minPressure = minPressure;
-    }
-
-    if(maxPressure != -1){ //if the value does exist, replace the maxPressure with it
-        adc_maxPressure = maxPressure;
-    }
 }
 // Make the global instance volatile
-volatile pressureStruct pressureData;
+pressureStruct pressureData;
 
 // Initialize transducer
 void initTransducer(){
@@ -54,6 +51,24 @@ void initTransducer(){
 
     //Setting pinmode of pressure pin
     pinMode(TRANSDUCER_PIN, INPUT);
+
+    save_data.begin("press_minmax", false); //activates the namespace and inits it
+
+    int adc_minPressure_hold = save_data.getInt("minADC", -1); 
+    int adc_maxPressure_hold = save_data.getInt("maxADC", -1);
+
+    Serial.printf("Loaded min ADC Pressure:%d\n", adc_minPressure_hold);
+    Serial.printf("Loaded max ADC Pressure:%d\n", adc_maxPressure_hold);
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    if(adc_minPressure_hold != -1){ //if the value does exist, replace the minPressure with it
+        pressureData.adc_minPressure = adc_minPressure_hold;
+    }
+
+    if(adc_maxPressure_hold != -1){ //if the value does exist, replace the maxPressure with it
+        pressureData.adc_maxPressure = adc_maxPressure_hold;
+    }
+
 
 }
 
@@ -71,7 +86,7 @@ int pressureMap(int pressure){
 }
 
 int getPressureInPSI(){
-    int psi = pressureData.currentPressure_ADC.getAvg();
+    int psi = pressureData.currentPressure_PSI.getAvg();
     return psi;
 }
 
@@ -82,11 +97,12 @@ int calculatePressure(){
     int pressure = readTransducer(); // get pressure in ADC value
     pressureData.currentPressure_ADC.reading(pressure);// feed it into the moving average
     int avgd_press_from_adc = pressureData.currentPressure_ADC.getAvg();
+    
 
     // Get pressure and feed into moving PSI average
     int avg_pressure_in_psi = pressureMap(avgd_press_from_adc);
     pressureData.currentPressure_PSI.reading(avg_pressure_in_psi);
-    vTaskDelay(pdMS_TO_TICKS(50)); //Ease on cpu cycles
+    vTaskDelay(pdMS_TO_TICKS(100)); //Ease on cpu cycles
 
     return 1; // return psi value of the averaged pressure.
 
@@ -104,19 +120,27 @@ int pressurizeToMaxPSI(){
     while(state_flag == false){
 
         button_state = readButton();
-        int curr_Pressure = pressureData.currentPressure_ADC;
+        int curr_Pressure = pressureData.currentPressure_PSI.getAvg();
 
-        if(curr_Pressure >= pressureData.adc_maxPressure){
+        if(curr_Pressure >= pressureData.psi_maxPressure){
             state_flag = true;
-        }
-
-        if( (state_flag  == true) || button_state == LOW){
-            //Stop motor
             stopMotor();
         }
 
-        vTaskDelay(pdMS_TO_TICKS(50));
+        else if(button_state == LOW){
+            //Stop motor
+            stopMotor();
+            state_flag = true;
+            Serial.println("Emergency Stop Activated!\n");
+            vTaskDelay(pdMS_TO_TICKS(5000)); //Waiting so user can see message
+            return -1;
+        }
+        Serial.printf("Current Pressure: %d PSI\n", curr_Pressure);
+        Serial.printf("Target Pressure: %d PSI\n", pressureData.psi_maxPressure);
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
+
+    return 1;
     
 }
 
@@ -128,6 +152,8 @@ int findPressureRangeWithADC(){
     // 3 Beep alarm to signify test is starting.
     for(int x = 0; x < 3; x++){
         tone(21, 500); //never do this again. create a function next time
+        vTaskDelay(pdMS_TO_TICKS(250));
+        noTone(21);
         vTaskDelay(pdMS_TO_TICKS(250));
     }
 
@@ -157,6 +183,7 @@ int findPressureRangeWithADC(){
         vTaskDelay(pdMS_TO_TICKS(50));
 
         if(button_state == LOW){ //This is just to be safe...
+            stopMotor();
             break;
         }
     }
