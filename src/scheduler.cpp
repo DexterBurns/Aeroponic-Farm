@@ -11,7 +11,7 @@
 
 // Upper and lower limit for pressure in the system
 #define PSI_UPPER_LIMIT 100
-#define PSI_LOWER_LIMIT 80
+#define PSI_LOWER_LIMIT 75
 int night_scale = 2; //What to scale misting times by when it is night time.
 int delay_time = 50; //Delay time
 
@@ -109,7 +109,7 @@ int dayNightMistingCycle(int misting_interval, int misting_length, bool day_nigh
 }
 
 void checkPressureAndRepressurize(){
-    if(pressureData.currentPressure_PSI.getAvg() <= PSI_LOWER_LIMIT){
+    if(pressureData.currentPressure_PSI.get() <= PSI_LOWER_LIMIT){
         //repressurize function
         pressurizeToMaxPSI();
         Serial.println("Max Pressure Reached!\n");

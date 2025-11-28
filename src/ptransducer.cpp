@@ -22,25 +22,24 @@ Preferences save_data;
 Smoothed <int> p_transducer_ADC;
 
 // Scope to constructor, and define variables
-pressureStruct::pressureStruct()
-  : currentPressure_ADC(20), //moving pressure average of last 20 readings
-    currentPressure_PSI(20), //moving pressure average of last 20 readings in psi
-    minPressure_ADC(20),
-    maxPressure_ADC(20)
+pressureStruct::pressureStructInit()
 {
-    minPressure_ADC.begin();
-    maxPressure_ADC.begin();
-    currentPressure_ADC.begin();
-    currentPressure_PSI.begin();
-
-    minPressure_ADC.reading(100);
-    maxPressure_ADC.reading(1000);
-    currentPressure_ADC.reading(1000);
-    currentPressure_PSI.reading(10);
+    minPressure_ADC.begin(SMOOTHED_EXPONENTIAL, 10);
+    maxPressure_ADC.begin(SMOOTHED_EXPONENTIAL, 10);
+    currentPressure_ADC.begin(SMOOTHED_EXPONENTIAL, 10);
+    currentPressure_PSI.begin(SMOOTHED_EXPONENTIAL, 10);
 
     // See if there is a previous value for the ADC's minimum and maximum pressures
     int adc_minPressure_hold = save_data.getInt("minADC", -1); 
     int adc_maxPressure_hold = save_data.getInt("maxADC", -1);
+
+    if(adc_minPressure_hold != -1){ //if the value does exist, replace the minPressure with it
+        adc_minPressure = adc_minPressure_hold;
+    }
+
+    if(adc_maxPressure_hold != -1){ //if the value does exist, replace the maxPressure with it
+        adc_maxPressure = adc_maxPressure_hold;
+    }
 
 }
 // Make the global instance volatile
@@ -66,16 +65,8 @@ void initTransducer(){
     Serial.printf("Loaded max ADC Pressure:%d\n", adc_maxPressure_hold);
     vTaskDelay(pdMS_TO_TICKS(5000));
 
-    if(adc_minPressure_hold != -1){ //if the value does exist, replace the minPressure with it
-        pressureData.adc_minPressure = adc_minPressure_hold;
-    }
-
-    if(adc_maxPressure_hold != -1){ //if the value does exist, replace the maxPressure with it
-        pressureData.adc_maxPressure = adc_maxPressure_hold;
-    }
-
-    /* Smoothing Functionality*/
-    p_transducer_ADC.begin(SMOOTHED_EXPONENTIAL, 8);
+    /* Initializing Pressure Structure with Smoothing */
+    pressureData.pressureStructInit();
 
 }
 
@@ -89,32 +80,27 @@ int readTransducer() {
 int pressureMap(int pressure){
     // Mapping ADC pressure to PSI pressure.
     int psi_pressure = map(pressure, pressureData.adc_minPressure, pressureData.adc_maxPressure, pressureData.psi_minPressure, pressureData.psi_maxPressure);
-    psi_pressure = constrain(psi_pressure, pressureData.psi_minPressure, pressureData.psi_maxPressure);
+    //psi_pressure = constrain(psi_pressure, pressureData.psi_minPressure, pressureData.psi_maxPressure);
     return psi_pressure;
 }
 
 int getPressureInPSI(){
-    int psi = pressureData.currentPressure_PSI.getAvg();
+    int psi = pressureData.currentPressure_PSI.get();
     return psi;
 }
 
 // Function that is perpetually run by the pressure task to always have pressure calculated and ready to go.
 int calculatePressure(){
 
-    // Get pressure and feed it into moving avg, and get the current avg pressure for ADC values
+    // Get pressure and feed it into exp average in pressure data 
     int pressure = readTransducer(); // get pressure in ADC value
-    p_transducer_ADC.add(pressure); //Smoothing sensor value
-    int smoothed_pressure = p_transducer_ADC.get();
-    pressureData.currentPressure_ADC.reading(smoothed_pressure);// feed it into the moving average
-    int avgd_press_from_adc = pressureData.currentPressure_ADC.getAvg();
-    
-    // Get pressure and feed into moving PSI average
-    int avg_pressure_in_psi = pressureMap(avgd_press_from_adc);
-    pressureData.currentPressure_PSI.reading(avg_pressure_in_psi);
+    pressureData.currentPressure_ADC.add(pressure); //Smoothing sensor value
+
+    // Get pressure and feed into moving PSI exponential
+    int avg_pressure_in_psi = pressureMap(pressureData.currentPressure_ADC.get());
+    pressureData.currentPressure_PSI.add(avg_pressure_in_psi);
     vTaskDelay(pdMS_TO_TICKS(5)); //Ease on cpu cycles
-
     return 1; // return psi value of the averaged pressure.
-
 }
 
 // Function to pressurize system to max. Not a Task, but for 24hr cycle
@@ -129,7 +115,7 @@ int pressurizeToMaxPSI(){
     while(state_flag == false){
 
         button_state = readButton();
-        int curr_Pressure = pressureData.currentPressure_PSI.getAvg();
+        int curr_Pressure = pressureData.currentPressure_PSI.get();
 
         if(curr_Pressure >= pressureData.psi_maxPressure){
             state_flag = true;
@@ -174,9 +160,9 @@ int findPressureRangeWithADC(){
     vTaskDelay(pdMS_TO_TICKS(5000));
     // Record current pressure ADC value while system unpressurized. For a 10 seconds, every 50 ms. Doing for so long for the system to settle. 
     for (int x = 0; x < 200; x++){
-        int pressure = readTransducer();
+        int pressure = readTransducer(); // I like to see the raw here
         Serial.printf("Current Unpressurized ADC Reading:%d\n", pressure);
-        pressureData.minPressure_ADC.reading(pressure);
+        pressureData.minPressure_ADC.add(pressure);
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
@@ -204,13 +190,13 @@ int findPressureRangeWithADC(){
     for (int x = 0; x < 200; x++){
         int pressure = readTransducer();
         Serial.printf("Current Max Pressure ADC Reading:%d\n", pressure);
-        pressureData.maxPressure_ADC.reading(pressure);
+        pressureData.maxPressure_ADC.add(pressure);
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
     // Setting the averages we calculated to the global pressureData structure. 
-    pressureData.adc_minPressure = pressureData.minPressure_ADC.getAvg(); // Get calculated moving average
-    pressureData.adc_maxPressure = pressureData.maxPressure_ADC.getAvg(); // Get max calculated moving average
+    pressureData.adc_minPressure = pressureData.minPressure_ADC.get(); // Get calculated moving average
+    pressureData.adc_maxPressure = pressureData.maxPressure_ADC.get(); // Get max calculated moving average
 
     //Also save these to prefs
     save_data.putInt("minADC", pressureData.adc_minPressure);
