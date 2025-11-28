@@ -51,7 +51,7 @@ void initTransducer(){
 
     analogReadResolution(12);
     // set ADC pin 35 attenuation. Voltage after the divider should be around 2.5 volts
-    analogSetPinAttenuation(TRANSDUCER_PIN, ADC_11db);
+    analogSetPinAttenuation(TRANSDUCER_PIN, ADC_6db);
 
     //Setting pinmode of pressure pin
     pinMode(TRANSDUCER_PIN, INPUT);
@@ -75,7 +75,7 @@ void initTransducer(){
     }
 
     /* Smoothing Functionality*/
-    p_transducer_ADC.begin(SMOOTHED_EXPONENTIAL, 10);
+    p_transducer_ADC.begin(SMOOTHED_EXPONENTIAL, 8);
 
 }
 
@@ -89,6 +89,7 @@ int readTransducer() {
 int pressureMap(int pressure){
     // Mapping ADC pressure to PSI pressure.
     int psi_pressure = map(pressure, pressureData.adc_minPressure, pressureData.adc_maxPressure, pressureData.psi_minPressure, pressureData.psi_maxPressure);
+    psi_pressure = constrain(psi_pressure, pressureData.psi_minPressure, pressureData.psi_maxPressure);
     return psi_pressure;
 }
 
@@ -110,7 +111,7 @@ int calculatePressure(){
     // Get pressure and feed into moving PSI average
     int avg_pressure_in_psi = pressureMap(avgd_press_from_adc);
     pressureData.currentPressure_PSI.reading(avg_pressure_in_psi);
-    vTaskDelay(pdMS_TO_TICKS(100)); //Ease on cpu cycles
+    vTaskDelay(pdMS_TO_TICKS(5)); //Ease on cpu cycles
 
     return 1; // return psi value of the averaged pressure.
 
