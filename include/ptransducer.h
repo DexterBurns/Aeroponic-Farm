@@ -5,13 +5,13 @@
 #include <Arduino.h>
 #include <movingAvg.h>
 #include <Preferences.h>
-#include "Smoothed.h" // Sensor smoothing library
+#include <Smoothed.h> // Sensor smoothing library
 
 struct pressureStruct {
-    Smoothed currentPressure_ADC; //moving avg of pressure in ADC values
-    Smoothed currentPressure_PSI; //moving avg of pressure in PSI
-    Smoothed minPressure_ADC; //used to calclate the average of the minimum pressure, once
-    Smoothed maxPressure_ADC; //used to calculate the avg of the maximum pressure, once
+    Smoothed <int> currentPressure_ADC; //moving avg of pressure in ADC values
+    Smoothed <int> currentPressure_PSI; //moving avg of pressure in PSI
+    Smoothed <int> minPressure_ADC; //used to calclate the average of the minimum pressure, once
+    Smoothed <int> maxPressure_ADC; //used to calculate the avg of the maximum pressure, once
 
     int psi_minPressure  = 0;
     int psi_maxPressure  = 100;

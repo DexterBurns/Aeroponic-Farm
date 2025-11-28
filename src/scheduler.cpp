@@ -10,7 +10,7 @@
 #define BUZZER_PIN 21
 
 // Upper and lower limit for pressure in the system
-#define PSI_UPPER_LIMIT 100
+#define PSI_UPPER_LIMIT 95
 #define PSI_LOWER_LIMIT 75
 int night_scale = 2; //What to scale misting times by when it is night time.
 int delay_time = 50; //Delay time
@@ -104,8 +104,9 @@ int dayNightMistingCycle(int misting_interval, int misting_length, bool day_nigh
         }
 
         vTaskDelay(pdMS_TO_TICKS(10000)); //Let user see message in time
-        return 1;
+        
     }
+    return 1;
 }
 
 void checkPressureAndRepressurize(){

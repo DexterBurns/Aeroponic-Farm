@@ -22,7 +22,7 @@ Preferences save_data;
 Smoothed <int> p_transducer_ADC;
 
 // Scope to constructor, and define variables
-pressureStruct::pressureStructInit()
+void pressureStruct::pressureStructInit()
 {
     minPressure_ADC.begin(SMOOTHED_EXPONENTIAL, 10);
     maxPressure_ADC.begin(SMOOTHED_EXPONENTIAL, 10);
@@ -80,7 +80,7 @@ int readTransducer() {
 int pressureMap(int pressure){
     // Mapping ADC pressure to PSI pressure.
     int psi_pressure = map(pressure, pressureData.adc_minPressure, pressureData.adc_maxPressure, pressureData.psi_minPressure, pressureData.psi_maxPressure);
-    //psi_pressure = constrain(psi_pressure, pressureData.psi_minPressure, pressureData.psi_maxPressure);
+    psi_pressure = constrain(psi_pressure, pressureData.psi_minPressure, pressureData.psi_maxPressure);
     return psi_pressure;
 }
 
@@ -94,12 +94,16 @@ int calculatePressure(){
 
     // Get pressure and feed it into exp average in pressure data 
     int pressure = readTransducer(); // get pressure in ADC value
+    Serial.printf("Raw Pressure ADC Reading: %d\n", pressure);
     pressureData.currentPressure_ADC.add(pressure); //Smoothing sensor value
-
+    Serial.printf("Current Pressure ADC Reading: %d\n", pressureData.currentPressure_ADC.get());
     // Get pressure and feed into moving PSI exponential
-    int avg_pressure_in_psi = pressureMap(pressureData.currentPressure_ADC.get());
+    int hold_pressure = pressureData.currentPressure_ADC.get();
+    int avg_pressure_in_psi = pressureMap(hold_pressure);
+    //Serial.printf("Mapped Pressure in PSI: %d\n", avg_pressure_in_psi);
     pressureData.currentPressure_PSI.add(avg_pressure_in_psi);
-    vTaskDelay(pdMS_TO_TICKS(5)); //Ease on cpu cycles
+    //Serial.printf("Calculated Pressure in PSI: %d\n", pressureData.currentPressure_PSI.get());
+    vTaskDelay(pdMS_TO_TICKS(250)); //Ease on cpu cycles
     return 1; // return psi value of the averaged pressure.
 }
 
