@@ -84,3 +84,10 @@ Function to print task list. This should be what the cycle function calls, becau
 Next task is to add the new functionality to the Serial command list
 
 Need to find a better way to log psi, it has too many swings
+
+Pin Function
+10 purple - p transducer adc
+9 green - button pin
+8 red - SCLK
+brown 3.3volts to VDD
+taped wires = buttons, red = 3.3v, blk = gnd

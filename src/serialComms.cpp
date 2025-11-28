@@ -2,6 +2,7 @@
 #include "serialComms.h"
 #include "string"
 
+
 /* All communication related functionality will be happening in here. It will also include the 
 table for all the meanings of the functions that I'd like to happen during testing. Some tasks will also be run from here. */
 

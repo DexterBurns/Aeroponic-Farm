@@ -6,9 +6,12 @@
 #include "solenoids.h"
 #include <Preferences.h>
 #include "Smoothed.h" // Sensor smoothing library
+#include <Wire.h>
+#include <ADS1X15.h>
 
 // Define ADC Pin for the pressure pump
-#define TRANSDUCER_PIN 10
+#define TRANSDUCER_PIN 10 //SDA pin for data from the ADC
+#define SCLK_PIN 8
 
 /* PREFS, saved memory, be careful editing this!*/
 // Save min ADC pressure value, max ADC pressure value
@@ -20,6 +23,10 @@ Preferences save_data;
 
 /* Smoothing variable */
 Smoothed <int> p_transducer_ADC;
+
+/* External ADC setup */
+using namespace ADS1X15;
+ADS1115<TwoWire> ads(Wire);
 
 // Scope to constructor, and define variables
 void pressureStruct::pressureStructInit()
@@ -48,13 +55,6 @@ pressureStruct pressureData;
 // Initialize transducer
 void initTransducer(){
 
-    analogReadResolution(12);
-    // set ADC pin 35 attenuation. Voltage after the divider should be around 2.5 volts
-    analogSetPinAttenuation(TRANSDUCER_PIN, ADC_6db);
-
-    //Setting pinmode of pressure pin
-    pinMode(TRANSDUCER_PIN, INPUT);
-
     save_data.begin("press_minmax", false); //activates the namespace and inits it
 
     /* Calling Data from memory based on last min and max pressure saved.*/
@@ -68,11 +68,18 @@ void initTransducer(){
     /* Initializing Pressure Structure with Smoothing */
     pressureData.pressureStructInit();
 
+    /* Setup for the ADC. 32 Samples per second. */
+    Wire.begin(TRANSDUCER_PIN, SCLK_PIN); 
+
+    ads.begin();   
+    ads.setGain(Gain::ONE_4096MV);
+    ads.setDataRate(Rate::ADS1115_32SPS);
+
 }
 
 // Function to read transducer value. Returns ADC value
 int readTransducer() {
-    int pressure = analogRead(TRANSDUCER_PIN);
+    int pressure = ads.readADCSingleEnded(0);
     return pressure;
 }
 
@@ -103,7 +110,7 @@ int calculatePressure(){
     //Serial.printf("Mapped Pressure in PSI: %d\n", avg_pressure_in_psi);
     pressureData.currentPressure_PSI.add(avg_pressure_in_psi);
     //Serial.printf("Calculated Pressure in PSI: %d\n", pressureData.currentPressure_PSI.get());
-    vTaskDelay(pdMS_TO_TICKS(250)); //Ease on cpu cycles
+    vTaskDelay(pdMS_TO_TICKS(50)); //Ease on cpu cycles
     return 1; // return psi value of the averaged pressure.
 }
 
