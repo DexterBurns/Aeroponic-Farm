@@ -3,7 +3,7 @@
 #define TASKS_H
 
 #include <Arduino.h>
-
+#include <Preferences.h>
 // Add all new functionality to this. might be obsolete now
 enum Task {
     OPEN_ALL_SOLENOIDS,
@@ -17,7 +17,7 @@ enum Task {
     DAY_NIGHT_CYCLE,
 };
 
-int taskRunner(int, int, int, int, bool);
+int taskRunner(int, int, int, int, bool, Preferences &);
 
 int taskParser(int);
 

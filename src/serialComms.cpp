@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "serialComms.h"
 #include "string"
+#include "scheduler.h"
+#include <Preferences.h>
 
 
 /* All communication related functionality will be happening in here. It will also include the 
@@ -9,6 +11,7 @@ table for all the meanings of the functions that I'd like to happen during testi
 // Delimeter for the text received
 long task_value;
 long task_time; 
+Preferences misting_params_comms;
 
 
 void serialCommsInit(){
@@ -16,6 +19,8 @@ void serialCommsInit(){
     Serial.begin(115200);
     delay(200);                         // give USB/UART a moment
     Serial.println("Serial Comms Initialized"); 
+    //init misting_params_comms
+    misting_params_comms.begin("mstng_prms", false);
 
 }
 
@@ -94,7 +99,7 @@ int readFromSerial(int &msg, int &time){
 
 
 // Function to read our command from the serial monitor. 
-int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_time, bool &day_night_flag){
+int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_time, bool &day_night_flag, Preferences &misting_params_main){
 
     // Flags for if a msg was received and a time was received
     bool misting_interval_msg_rec = false;
@@ -127,6 +132,7 @@ int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_t
             // Message is consumed, serial available should read -1 now
             misting_value = Serial.parseInt(); // Consumed message should be the task to perform
             Serial.printf("Misting Interval Received: %d\n", misting_value);
+            misting_params_main.putInt("mst_ntrvl", misting_value);
             flushReceiveBuffer(); //Make sure buffer is clear
 
             // Logic to check and make sure user actually wants task 0 and not accidentally
@@ -156,6 +162,7 @@ int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_t
                     if(Serial.available() > 0 ){
                         misting_length = Serial.parseInt();
                         Serial.printf("Misting Duration Received: %d\n", misting_length);
+                        misting_params_main.putInt("mst_lngth", misting_length);
                         misting_time_msg_rec = true;
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         flushReceiveBuffer(); //Make sure buffer is clear
@@ -183,6 +190,7 @@ int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_t
                     if(Serial.available() > 0 ){
                         day_night_value = Serial.parseInt();
                         Serial.printf("Day/Night Received: %d\n", day_night_value);
+                        misting_params_main.putInt("day_night", day_night_value);
                         day_night_msg_rec = true;
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         flushReceiveBuffer(); //Make sure buffer is clear
@@ -202,6 +210,8 @@ int readFromSerialforDayandNightParameters(int &misting_interval, int &misting_t
 
     misting_interval = misting_value;
     misting_time = misting_length;
+    misting_params_main.putInt("cont_cycle", 1); //Set flag to continue cycle after power loss
+    misting_params_main.end();
     return 0;
 }
 

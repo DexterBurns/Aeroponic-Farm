@@ -8,7 +8,7 @@
 
 
 // Function to figure out which task was requested and running it.
-int taskRunner(int chosen_task, int task_time, int misting_interval, int misting_length, bool day_night_flag){
+int taskRunner(int chosen_task, int task_time, int misting_interval, int misting_length, bool day_night_flag, Preferences &misting_params_main){
 
     switch(chosen_task) {
         case OPEN_ALL_SOLENOIDS:
@@ -55,7 +55,7 @@ int taskRunner(int chosen_task, int task_time, int misting_interval, int misting
 
         case DAY_NIGHT_CYCLE:
             Serial.println("DAY/NIGHT Cycle Function chosen.\n");
-            dayNightMistingCycle(misting_interval, misting_length, day_night_flag);
+            dayNightMistingCycle(misting_interval, misting_length, day_night_flag, misting_params_main);
             break;
         
         default:

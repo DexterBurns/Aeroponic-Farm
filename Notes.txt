@@ -91,3 +91,6 @@ Pin Function
 8 red - SCLK
 brown 3.3volts to VDD
 taped wires = buttons, red = 3.3v, blk = gnd
+
+Serial message to print occasionally during wait period so we know the wait period is still going on
+A way to hold a variable that continues the previous misting cycle's parameters even on shutdown/restart.

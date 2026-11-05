@@ -3,8 +3,9 @@
 #define SCHEDULER_H
 
 #include <Arduino.h>
-
-int dayNightMistingCycle(int, int, bool);
+#include <Preferences.h>
+void schedulerInit();
+int dayNightMistingCycle(int, int, bool, Preferences &);
 void checkPressureAndRepressurize();
 void buzzerAlert(int buzzes);
 

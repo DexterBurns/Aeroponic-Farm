@@ -6,6 +6,7 @@
 #include "solenoids.h"
 #include "tasks.h"
 #include "scheduler.h"
+#include <Preferences.h>
 
 // Define buzzer pin
 #define BUZZER_PIN 21
@@ -40,6 +41,13 @@ int misting_interval = 300000; //5 minutes in milliseconds
 int misting_time = 5000; //5 seconds
 bool day_night_flag;
 
+//For holding saved data 
+Preferences misting_params_main;
+int saved_interval_main;
+int saved_length_main;
+int saved_daynight_main;
+int continue_cycle_main;
+
 
 void setup() {
 
@@ -68,7 +76,16 @@ void setup() {
 
   // Create RTOS Task that will constantly calculate and monitor pressure
   xTaskCreate(calculatePressureTask, "Pressure Calc", 2048, NULL, 4, NULL);
-  
+
+  // Init Scheduler parameters
+  schedulerInit();
+  // Init main misting parameters
+  misting_params_main.begin("mstng_prms", false);
+  saved_interval_main = misting_params_main.getInt("mst_ntrvl", 300000); // Default to 5 minutes if value not found
+  saved_length_main = misting_params_main.getInt("mst_lngth", 5000); // Default to 5 seconds if value not found
+  saved_daynight_main = misting_params_main.getInt("day_night", 1); // Default to day mode if value not found
+  continue_cycle_main = misting_params_main.getInt("cont_cycle", 0); // Default to not continue cycle after power loss
+
 }
 
 // Keep in mind, all functions will be run via FreeRTOS. 
@@ -112,8 +129,9 @@ void loop() {
     }
 
     else if(runnerResult == 8){ //we know the day/night task was requested. get more information
-        readFromSerialforDayandNightParameters(misting_interval, misting_time, day_night_flag);
-        dayNightMistingCycle(misting_interval, misting_time, day_night_flag);
+        readFromSerialforDayandNightParameters(misting_interval, misting_time, day_night_flag, misting_params_main);
+        misting_params_main.putInt("cont_cycle", 1); //Set flag to continue cycle after power loss
+        dayNightMistingCycle(misting_interval, misting_time, day_night_flag, misting_params_main);
     }
 
     else{
@@ -126,7 +144,7 @@ void loop() {
   }
   
   //If start pin in HIGH (button is unpressed) we loop until it is
-  else if (bttn_state == HIGH)
+  else if (bttn_state == HIGH && continue_cycle_main == 0)
   {
     
       Serial.printf("Start Button State: %d\n", bttn_state);
@@ -135,6 +153,23 @@ void loop() {
       Serial.printf("Pressure Reading: %d\n", pressure_reading);
       vTaskDelay(pdMS_TO_TICKS(500));
 
+      //Print all saved parameters for debug
+      Serial.printf("Saved Misting Interval: %d ms\n", saved_interval_main);
+      Serial.printf("Saved Misting Length: %d ms\n", saved_length_main);
+      Serial.printf("Saved Day/Night Flag: %d\n", saved_daynight_main);
+      Serial.printf("Continue Cycle after Power Loss Flag: %d\n", continue_cycle_main);
+
+  }
+
+  else if (continue_cycle_main == 1 && bttn_state == HIGH && task1_parameters.task_state == false){
+    saved_daynight_main = misting_params_main.getInt("day_night", 1); // Refresh in case it was changed
+    saved_interval_main = misting_params_main.getInt("mst_ntrvl", 300000); // Refresh in case it was changed
+    saved_length_main = misting_params_main.getInt("mst_lngth", 5000); // Refresh in case it was changed
+    Serial.println("Resuming previous cycle after power loss.");
+    Serial.printf("Using saved parameters - Interval: %d ms, Length: %d ms, Day/Night(0=day, 1=night): %d\n", saved_interval_main, saved_length_main, saved_daynight_main);
+    dayNightMistingCycle(saved_interval_main, saved_length_main, saved_daynight_main, misting_params_main);
+    misting_params_main.putInt("cont_cycle", 0); //means we broke out of the cycle so dont reenter
+    continue_cycle_main = 0; //just incase
   }
 
   else{
@@ -146,7 +181,7 @@ void loop() {
 void task1(void *parameters){
 
   TaskData *task_data = (TaskData *)parameters; //Casting back to our original type
-  int parser_response = taskRunner(task_data->task_chosen, task_data->task_time, 0, 0, false); //Calling the task we want performed.
+  int parser_response = taskRunner(task_data->task_chosen, task_data->task_time, 0, 0, false, misting_params_main); //Calling the task we want performed.
 
   if(parser_response == 1){
     Serial.println("Successful run.Closing RTOS Task.\n");
