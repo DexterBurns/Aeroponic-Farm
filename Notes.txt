@@ -99,4 +99,30 @@ A way to hold a variable that continues the previous misting cycle's parameters 
 //***//
 Updates since last year:
 
+Things the command center need to run: (I think every function should have a 'Save' feature that makes it so that the current sent command is perpetual and not until the next power cycle)
+    Pressurization Recalibration:
+        Make it so that we can initiate Recalibration, which is just the user being able to start the function that allows us to 
+        get the system in a debug mode where it is completely unpressurized, so that we can get Analog 0psi and 100psi readings from 
+        the ADC, and create a benchamrk for the analog values in relation to pressure in the system
 
+    Day and Night Cycle 
+        Make it so that i can select and set Day and Night Cycle values for the system, and also be able to set the misting cycles 
+        to be saved into the Storage. 
+
+    Set Timing Intervals 
+        Be able to set intervals for the misting time of the system. 
+
+    Settings Read
+        Be able to Read the current settings the device has set. This should be a request from the GUI. 
+
+    Debug commands:
+        These would be commands like, "open this solenoid for X seconds" Or "Power the motor for X seconds" Stuff. 
+        These commands should always send the current PSI level as well, just for safety and calibration 
+        Should include Set/Reset for all the saved commands
+
+    Set Manual and Automated Modes 
+        This should be a section to set both manual and automated modes for the system. Manual = Debug mode
+
+
+
+    
