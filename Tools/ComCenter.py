@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+import json
+
 #This is our window object
 root = tk.Tk()
 
@@ -35,6 +37,8 @@ panel = ttk.LabelFrame(root, text ="Misting Interval", padding=16).grid(row=5, c
 # Horizontal Slider for Misting Interval
 horizontal_scale = tk.Scale(root, from_=1000, to=6000, orient='horizontal').grid(row=5, column=0, padx=10, pady=10)
 
+#----------
+
 
 
 
@@ -44,3 +48,6 @@ horizontal_scale = tk.Scale(root, from_=1000, to=6000, orient='horizontal').grid
 
 root.mainloop()
 
+
+#Function to handle replies
+def handle_replies(reply):

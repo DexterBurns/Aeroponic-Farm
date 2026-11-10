@@ -123,6 +123,18 @@ Things the command center need to run: (I think every function should have a 'Sa
     Set Manual and Automated Modes 
         This should be a section to set both manual and automated modes for the system. Manual = Debug mode
 
+JSON Objects:
+    Status (Busy/Idle)
+    Mode (Auto/Manual)
+    PSI (Current Pressure)
+    ADC Reading (Analog Value)
+    Misting Interval ( Time Between misting in seconds)
+    Misting Duration (Misting time in seconds)
+    Solenoid 1 Status (Open/Closed)
+    Solenoid 2 Status (Open/Closed)
+    Solenoid 3 Status (Open/Closed)
+    Solenoid 4 Status (Open/Closed)
+    Cycle (Day/Night)
 
 
     
