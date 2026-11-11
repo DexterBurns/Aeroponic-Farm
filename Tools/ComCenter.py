@@ -49,5 +49,38 @@ horizontal_scale = tk.Scale(root, from_=1000, to=6000, orient='horizontal').grid
 root.mainloop()
 
 
-#Function to handle replies
-def handle_replies(reply):
+#Function to handle replies. 
+def handleReplies(reply):
+
+    try:
+        message = json.loads(reply)
+    except json.JSONDecodeError:
+        status_label.config(text="Received invalid JSON")
+        return
+
+    #Using this area to handle how messages get placed into the JSON
+    #This give us everything under status. We can parse the statuses now.
+    esp32_Status = message["status"] #Checking if ESP32 is still okay
+    esp32_Mode = message["Mode"]
+    esp32_ADC1 = message["ADC"]
+    esp32_PSI = message["PSI"]
+    esp32_MistInt = message["Misting Interval"]
+    esp32_MistDur = message["Misting Duration"]
+    esp32_Sol1Status = message["Solendoid 1 Status"]
+    esp32_Sol2Status = message["Solendoid 2 Status"]
+    esp32_Sol3Status = message["Solendoid 3 Status"]
+    esp32_Sol4Status = message["Solendoid 4 Status"]
+    esp32_CycleStatus = message["Cycle"]
+    esp32_PumpStatus = message["Pump Status"]
+
+    #-----------------------------------------------------
+    #Data the esp32 currently has saved in flash memory
+    esp32_S_MistInt = message["Saved Misting Interval"]
+    esp32_S_MistDur = message["Saved Misting Duration"]
+    esp32_S_Mode = message["Saved Mode"]
+    esp32_S_Cycle = message["Saved Cycle"]
+    esp32_S_MinPSI = message["Saved Minimum PSI"]
+    esp32_S_MaxPSI = message["Saved Maximum PSI"]
+    esp32_S_MinPSIADC = message["Saved Minimum PSI ADC"]
+    esp32_S_MaxPSIADC = message["Saved Maximum PSI ADC"]
+    

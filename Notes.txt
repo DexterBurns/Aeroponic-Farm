@@ -124,7 +124,7 @@ Things the command center need to run: (I think every function should have a 'Sa
         This should be a section to set both manual and automated modes for the system. Manual = Debug mode
 
 JSON Objects:
-    Status (Busy/Idle)
+    Status (Busy/Idle/Error)
     Mode (Auto/Manual)
     PSI (Current Pressure)
     ADC Reading (Analog Value)
@@ -134,7 +134,8 @@ JSON Objects:
     Solenoid 2 Status (Open/Closed)
     Solenoid 3 Status (Open/Closed)
     Solenoid 4 Status (Open/Closed)
-    Cycle (Day/Night)
+    Cycle (Day/Night/off)
+    Pump Status (Running/Stopped)
 
 
     
