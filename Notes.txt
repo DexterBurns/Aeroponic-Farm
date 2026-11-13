@@ -124,6 +124,7 @@ Things the command center need to run: (I think every function should have a 'Sa
         This should be a section to set both manual and automated modes for the system. Manual = Debug mode
 
 JSON Objects:
+    Type of Command (Command/Set)
     Status (Busy/Idle/Error)
     Mode (Auto/Manual)
     PSI (Current Pressure)
