@@ -6,6 +6,7 @@ import serial
 #Opening port to device
 device_Port = "COM3"
 ser = serial.Serial(device_Port, 115200, timeout=1)
+dummy = serial.serial_for_url("loop://", timeout=1)
 
 #Function to handle replies. For this, we'll just have the ESP32 fill out the JSON for every parameter by default.
 def handleReplies(reply):
@@ -60,8 +61,57 @@ def solenoidOpenMessage(solenoid_num, open_time):
     }
 
     #Send message to ESP32
-    json_message = json.dumps(message)
+    
+#Function to run motor for x amount of seconds
+def runMotorMessage(run_Time):
+
+    run_Time = run_Time * 1000
+
+    message = {
+        "type": "command",
+        "parameter": "run_motor",
+        "settings": {
+            "run_time": run_Time
+        }
+    }
+
+    sendJSONMessage(message)
+
+# I want this to start in 15 seconds after the command is received.
+# Make a note the ESP-32 should beep as it is aobut to start the test, and maybe a
+# note to mention that the button on the
+def calibratePSI():
+
+    message = {
+        "type": "calibration",
+        "parameter": "calibrate_PSI",
+        "settings": {
+            "start time": 15000 
+        }
+    }
+
+    sendJSONMessage(message)
 
 #Function that packs send the JSON over serial
-def sendJSONMessage(json_Message):
-    ser.write((json_Message + "\n").encode("utf=8"))
+def sendJSONMessage(raw_Message):
+
+    #Dump raw message and send to ESP32
+    json_Message = json.dumps(raw_Message)
+    dummy.write((json_Message + "\n").encode("utf=8"))
+
+    #Til we get the device setup and working
+    #ser.write((json_Message + "\n").encode("utf=8"))
+
+#Function to test Serial messages sent from Command Center
+def loopBack(serial_Message):
+
+
+    dummy.write((serial_Message + "\n").encode("utf=8"))
+
+    response = ser.readline().decode().strip()
+
+    print(response)
+
+def closeSerialConnections():
+    ser.close()
+    dummy.close()

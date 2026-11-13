@@ -4,25 +4,37 @@ import json
 
 import ComCenterFuncs as cf 
 
+#Close serial connections when window is closed. Avoids errors
+def on_close():
+    cf.closeSerialConnections()
+    
 
 #Hides all the buttons related to manual mode
 def hideManualModeUI():
 
     manMode_Button.grid_remove()
     
+#Widget to reset debug commands as needed. 
+def reset_DebugGUI():
+
+    for widget in debug_Frame.winfo_children():
+
+        if isinstance(widget, (ttk.Button, tk.Button) ):
+            widget.config(state="normal")
+
+        if isinstance(widget, (tk.Scale, ttk.Scale)):
+            widget.set(1000)
+
 
 def checkMode():
 
     # If the manual button is selected. Hide all the manual buttons
     if manAuto == 1:
-        mist_IntervalSlider.grid_remove()
-        mist_DurationSlider.grid_remove()
+        debug_Frame.grid_remove()      
 
 #Function to run our PSI calibration test
 def psiCalibration():
     hold = 0
-
-
 
 
 #This is our window object
@@ -78,11 +90,16 @@ sol4_Button.grid(row=4, column=1, padx=10, pady=10)
 
 run_MotorSlider = tk.Scale(debug_Frame, from_=0, to=10, orient="horizontal", label="Seconds")
 run_MotorSlider.grid(row=5, column=0, padx=10, pady=10)
+run_MotorButton = ttk.Button(debug_Frame, text = "Send Motor Cmd", command = lambda: cf.runMotorMessage(run_MotorSlider.get()))
+run_MotorButton.grid(row=5, column=1,padx=10, pady=10)
 
 recal_PSI = ttk.Button(debug_Frame, text="Calibrate", command=psiCalibration)
 
 
+
+
 #Might need a section here for when we want to display the current settings we have applied on the ESP32.
 
-
+#Cleanup
+root.protocol("WM_DELETE_WINDOW", on_close)
 root.mainloop()
