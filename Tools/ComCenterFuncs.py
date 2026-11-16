@@ -1,11 +1,10 @@
 #JSON library for prosessing JSON's
 import json
-import ComCenter 
 import serial
 
 #Opening port to device
-device_Port = "COM3"
-ser = serial.Serial(device_Port, 115200, timeout=1)
+#device_Port = "COM3"
+#ser = serial.Serial(device_Port, 115200, timeout=1)
 dummy = serial.serial_for_url("loop://", timeout=1)
 
 #Function to handle replies. For this, we'll just have the ESP32 fill out the JSON for every parameter by default.
@@ -45,6 +44,32 @@ def handleReplies(reply):
 
     return 0
 
+#Function to set and update day/night cycle parameters.
+#Day = 0, Night = 1
+def dayNightCycleSetAndUpdate(misting_interval, misting_duration, day_or_night):
+
+    misting_interval_ms = misting_interval * 1000
+    misting_duration_ms = misting_duration * 1000
+
+    if (day_or_night == 0):
+        cycle = "day"
+
+    elif(day_or_night == 1):
+        cycle = "night"
+
+    message = {
+        "type": "auto_mode",
+        "parameter": "update_auto_mode",
+        "settings": {
+            "misting_interval": misting_interval_ms,
+            "misting_duration": misting_duration_ms,
+            "day_night": cycle
+        }
+    }
+
+    #Send JSON Message out to ESP32
+    sendJSONMessage(message)
+
 #ESP32 send open solenoid message 
 def solenoidOpenMessage(solenoid_num, open_time):
 
@@ -61,6 +86,7 @@ def solenoidOpenMessage(solenoid_num, open_time):
     }
 
     #Send message to ESP32
+    sendJSONMessage(message)
     
 #Function to run motor for x amount of seconds
 def runMotorMessage(run_Time):
@@ -108,10 +134,11 @@ def loopBack(serial_Message):
 
     dummy.write((serial_Message + "\n").encode("utf=8"))
 
-    response = ser.readline().decode().strip()
+    #response = ser.readline().decode().strip()
+    response = dummy.readline().decode().strip()
 
     print(response)
 
 def closeSerialConnections():
-    ser.close()
+    #ser.close()
     dummy.close()
