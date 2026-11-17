@@ -80,7 +80,13 @@ night_button.grid(row=4, column=0, padx=10, pady=10)
 send_AutoParams = ttk.Button(auto_Modeframe, text="Send Auto Params to ESP32", command=lambda: cf.dayNightCycleSetAndUpdate
                              (mist_IntervalSlider.get(),
                               mist_DurationSlider.get(),
-                              day_NightVariable.get()))
+                              day_NightVariable.get(),
+                              memory_Enabled.get()))
+send_AutoParams.grid(row=5, column=0, padx=10, pady=10)
+
+memory_Enabled = tk.BooleanVar(value=False)
+memory_Button = ttk.Checkbutton(auto_Modeframe, text="Save Params to ESP32", variable=memory_Enabled)
+memory_Button.grid(row=6, column=0, padx=10, pady=10)
 
 
 #-----------Debug Frame ---------------------------------------------------------
@@ -122,6 +128,17 @@ reset_Debug_Buttons = ttk.Button(debug_Frame, text="Reset all Parameters", comma
 reset_Debug_Buttons.grid(row=7, column = 0, padx = 10, pady = 10) 
 
 #Might need a section here for when we want to display the current settings we have applied on the ESP32.
+#------------------Data Table------------------------------------------------------------
+
+status_Table = ttk.Treeview(root, columns=("Parameter","Value"), show="headings", height=25)
+status_Table.grid(row=0, column=1, padx= 10, pady=10)
+
+
+
+
+
+
+
 
 #Cleanup
 root.protocol("WM_DELETE_WINDOW", on_close)

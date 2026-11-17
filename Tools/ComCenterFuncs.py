@@ -46,7 +46,7 @@ def handleReplies(reply):
 
 #Function to set and update day/night cycle parameters.
 #Day = 0, Night = 1
-def dayNightCycleSetAndUpdate(misting_interval, misting_duration, day_or_night):
+def dayNightCycleSetAndUpdate(misting_interval, misting_duration, day_or_night, save_to_memory):
 
     misting_interval_ms = misting_interval * 1000
     misting_duration_ms = misting_duration * 1000
@@ -63,7 +63,8 @@ def dayNightCycleSetAndUpdate(misting_interval, misting_duration, day_or_night):
         "settings": {
             "misting_interval": misting_interval_ms,
             "misting_duration": misting_duration_ms,
-            "day_night": cycle
+            "day_night": cycle,
+            "save_to_memory": save_to_memory
         }
     }
 
