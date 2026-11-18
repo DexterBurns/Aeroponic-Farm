@@ -137,7 +137,7 @@ status_Table.heading("values", text="Values")
 
 #Dictionary of all the things I'd like inside of the table. Values are default until we receive readings 
 data_Table_Dict = {
-    "status": "N/A",
+    "Status": "N/A",
     "Mode": "N/A",
     "ADC": "N/A",
     "PSI": "N/A",
@@ -164,8 +164,37 @@ data_Table_Dict = {
 # Creating the list of parameters that will be displayed
 for parameter, default_value in data_Table_Dict.items():
     status_Table.insert('', "end", iid=parameter, values=(parameter, default_value))
-  
 
+def UpdateTableData(data):
+
+    # For every parameter, set the parameters value in the table
+    for parameter, current_reading in data_Table_Dict.items():
+        status_Table.set(parameter, "values", current_reading)
+
+    return 0
+
+
+#------------------ Perpetual Functions --------------------------------
+# All of our functions that need to be run repeatedly, will be called by this.
+def LoopingFunctions():
+
+    # Generating our fake replies for now, until we get the ESP32 ready. 
+    fake_reply = cf.FakeReplies()
+    print(fake_reply)
+
+    # Getting the replies from the reader object variable, and processing them
+    if(cf.esp32_reader_object.latest_line == None):
+        print("Latest Line is None Type. Messages not going through")
+
+    else:
+        esp32_reply = cf.handleReplies(cf.esp32_reader_object.latest_line)
+        UpdateTableData(esp32_reply)
+
+    root.after(500, LoopingFunctions)
+
+
+# Runs our looping functions every so often
+root.after(500, LoopingFunctions)
 #Cleanup
 root.protocol("WM_DELETE_WINDOW", on_close)
 root.mainloop()
