@@ -130,15 +130,41 @@ reset_Debug_Buttons.grid(row=7, column = 0, padx = 10, pady = 10)
 #Might need a section here for when we want to display the current settings we have applied on the ESP32.
 #------------------Data Table------------------------------------------------------------
 
-status_Table = ttk.Treeview(root, columns=("Parameter","Value"), show="headings", height=25)
-status_Table.grid(row=0, column=1, padx= 10, pady=10)
+status_Table = ttk.Treeview(root, columns=("params","values"), show="headings", height=25)
+status_Table.grid(row=0, column=1, padx= 10, pady=10, rowspan=8)
+status_Table.heading("params", text="Parameter")
+status_Table.heading("values", text="Values")
 
+#Dictionary of all the things I'd like inside of the table. Values are default until we receive readings 
+data_Table_Dict = {
+    "status": "N/A",
+    "Mode": "N/A",
+    "ADC": "N/A",
+    "PSI": "N/A",
+    "Misting Interval": "N/A",
+    "Misting Duration": "N/A",
+    "Solendoid 1 Status": "N/A",
+    "Solendoid 2 Status": "N/A",
+    "Solendoid 3 Status": "N/A",
+    "Solendoid 4 Status": "N/A",
+    "Cycle": "N/A",
+    "Pump Status": "N/A",
 
+    # Data saved in the ESP32's flash memory
+    "Saved Misting Interval": "N/A",
+    "Saved Misting Duration": "N/A",
+    "Saved Mode": "N/A",
+    "Saved Cycle": "N/A",
+    "Saved Minimum PSI": "N/A",
+    "Saved Maximum PSI": "N/A",
+    "Saved Minimum PSI ADC": "N/A",
+    "Saved Maximum PSI ADC": "N/A",
+}
 
-
-
-
-
+# Creating the list of parameters that will be displayed
+for parameter, default_value in data_Table_Dict.items():
+    status_Table.insert('', "end", iid=parameter, values=(parameter, default_value))
+  
 
 #Cleanup
 root.protocol("WM_DELETE_WINDOW", on_close)
