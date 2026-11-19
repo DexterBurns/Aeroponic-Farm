@@ -25,5 +25,6 @@ struct GuiTelemetryData {
 };
 
 void sendGuiTelemetry(const GuiTelemetryData &data);
+void sendGuiCommandAck(bool accepted, const char *message);
 
 #endif

@@ -1,13 +1,18 @@
 #JSON library for prosessing JSON's
 import json
+import os
 import serial
+import threading
+from collections import deque
 from serial.threaded import LineReader, ReaderThread
 import random
 
 #Opening port to device
-#device_Port = "COM3"
-#ser = serial.Serial(device_Port, 115200, timeout=1)
-dummy = serial.serial_for_url("loop://", timeout=1)
+device_Port = os.environ.get("ESP32_PORT", "COM3")
+esp32_serial = None
+serial_reader = None
+esp32_reader_object = None
+transport = None
 
 # Our class inhereits the traits of LineReader.
 # We have the variables within it too.
@@ -18,32 +23,78 @@ class ESP32Reader(LineReader):
     def __init__(self):
         super().__init__()
         self.latest_line = None
+        self._line_lock = threading.Lock()
+        self._command_acks = deque()
 
     # Function that LineReader will call when a complete message is received.
     def handle_line(self, line):
-        print("Message Received: ", line)
-        self.latest_line = line
+        if line.lstrip().startswith("{"):
+            try:
+                message = json.loads(line)
+            except json.JSONDecodeError:
+                message = None
 
-#Initialize the reader thread, and expose the object
-serial_reader = ReaderThread(dummy, ESP32Reader)
-serial_reader.start()
-global received_message
-transport, esp32_reader_object = serial_reader.connect()
+            with self._line_lock:
+                if isinstance(message, dict) and message.get("type") == "command_ack":
+                    self._command_acks.append(line)
+                else:
+                    self.latest_line = line
+
+    def take_latest_line(self):
+        with self._line_lock:
+            if self._command_acks:
+                return self._command_acks.popleft()
+
+            line = self.latest_line
+            self.latest_line = None
+            return line
+
+
+def openSerialConnection():
+    global esp32_serial, serial_reader, esp32_reader_object, transport
+    if serial_reader is not None:
+        return
+
+    esp32_serial = serial.Serial(
+        device_Port,
+        115200,
+        timeout=1,
+        rts=False,
+        dtr=False,
+    )
+    serial_reader = ReaderThread(esp32_serial, ESP32Reader)
+    serial_reader.start()
+    transport, esp32_reader_object = serial_reader.connect()
+
+
+def takeLatestLine():
+    if esp32_reader_object is None:
+        return None
+    return esp32_reader_object.take_latest_line()
 
 
 #Function to handle replies. For this, we'll just have the ESP32 fill out the JSON for every parameter by default.
 def handleReplies(reply):
+    if not reply.lstrip().startswith("{"):
+        return None
+
     try:
         message = json.loads(reply)
-    except json.JSONDecodeError:
-        print("Received invalid JSON")
+    except json.JSONDecodeError as error:
+        print("Received invalid ESP32 JSON: {}".format(error))
         return None
 
     if not isinstance(message, dict):
-        print("Expected a JSON object")
+        print("Expected an ESP32 JSON object")
         return None
 
-    print("Reply successfully received from ESP32")
+    if message.get("type") == "command_ack":
+        return {
+            "__command_ack__": (
+                message.get("accepted") is True,
+                message.get("message", "ESP32 command response"),
+            )
+        }
 
     # .get is safer as it allows a fallback incase that value is missing 
     esp32_replies = {
@@ -74,37 +125,28 @@ def handleReplies(reply):
     return esp32_replies
 
 def FakeReplies():
-
-    garbage_messages = {
-        "Status": random.randint(0,100),
+    return {
+        "Status": random.randint(0, 100),
         "Mode": random.choice(["Idle", "Busy"]),
-        "ADC": random.randint(0,100),
-        "PSI": random.randint(0,100),
-        "Misting Interval": random.randint(0,100),
-        "Misting Duration": random.randint(0,100),
+        "ADC": random.randint(0, 100),
+        "PSI": random.randint(0, 100),
+        "Misting Interval": random.randint(0, 100),
+        "Misting Duration": random.randint(0, 100),
         "Solendoid 1 Status": random.choice(["Open", "Closed"]),
         "Solendoid 2 Status": random.choice(["Open", "Closed"]),
         "Solendoid 3 Status": random.choice(["Open", "Closed"]),
         "Solendoid 4 Status": random.choice(["Open", "Closed"]),
         "Cycle": random.choice(["Day", "Night"]),
         "Pump Status": random.choice(["On", "Off"]),
-
-        # Data saved in the ESP32's flash memory
-        "Saved Misting Interval": random.randint(0,100),
-        "Saved Misting Duration": random.randint(0,100),
+        "Saved Misting Interval": random.randint(0, 100),
+        "Saved Misting Duration": random.randint(0, 100),
         "Saved Mode": random.choice(["Auto", "Manual"]),
         "Saved Cycle": random.choice(["Day", "Night"]),
-        "Saved Minimum PSI": random.randint(0,100),
-        "Saved Maximum PSI": random.randint(0,100),
-        "Saved Minimum PSI ADC": random.randint(0,100),
-        "Saved Maximum PSI ADC": random.randint(0,100),
+        "Saved Minimum PSI": random.randint(0, 100),
+        "Saved Maximum PSI": random.randint(0, 100),
+        "Saved Minimum PSI ADC": random.randint(0, 100),
+        "Saved Maximum PSI ADC": random.randint(0, 100),
     }
-
-    #Dump raw message and send to ESP32
-    json_Message = json.dumps(garbage_messages)
-    dummy.write((json_Message + "\n").encode("utf=8"))
-
-    return garbage_messages
 
 #Function to set and update day/night cycle parameters.
 #Day = 0, Night = 1
@@ -184,24 +226,18 @@ def calibratePSI():
 #Function that packs send the JSON over serial
 def sendJSONMessage(raw_Message):
 
-    #Dump raw message and send to ESP32
+    if transport is None:
+        raise RuntimeError("ESP32 serial connection is not open.")
+
     json_Message = json.dumps(raw_Message)
-    dummy.write((json_Message + "\n").encode("utf=8"))
-
-    #Til we get the device setup and working
-    #ser.write((json_Message + "\n").encode("utf=8"))
-
-#Function to test Serial messages sent from Command Center
-def loopBack(serial_Message):
-
-
-    dummy.write((serial_Message + "\n").encode("utf=8"))
-
-    #response = ser.readline().decode().strip()
-    response = dummy.readline().decode().strip()
-
-    print(response)
+    transport.write((json_Message + "\n").encode("utf-8"))
 
 def closeSerialConnections():
-    #ser.close()
-    dummy.close()
+    global esp32_serial, serial_reader, esp32_reader_object, transport
+    if serial_reader is not None:
+        serial_reader.close()
+        serial_reader.join(timeout=1)
+        serial_reader = None
+        esp32_reader_object = None
+        transport = None
+        esp32_serial = None

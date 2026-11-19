@@ -176,7 +176,7 @@ void checkPressureAndRepressurize(){
 void buzzerAlert(int buzzes){
 
 
-    for(int x; x <= buzzes; x++){
+    for(int x = 0; x < buzzes; x++){
         pinMode(BUZZER_PIN, OUTPUT);
         tone(BUZZER_PIN, 1000);
         vTaskDelay(pdMS_TO_TICKS(500));

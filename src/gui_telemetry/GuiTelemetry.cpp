@@ -26,6 +26,40 @@ void sendGuiTelemetry(const GuiTelemetryData &data) {
     message["Saved Minimum PSI ADC"] = data.savedMinimumPsiAdc;
     message["Saved Maximum PSI ADC"] = data.savedMaximumPsiAdc;
 
-    serializeJson(message, Serial);
-    Serial.write('\n');
+    char json[512];
+    if (measureJson(message) >= sizeof(json)) {
+        Serial.println("{\"Status\":\"Telemetry serialization overflow\"}");
+        return;
+    }
+
+    size_t length = serializeJson(message, json, sizeof(json) - 1);
+    if (length == 0) {
+        Serial.println("{\"Status\":\"Telemetry serialization failed\"}");
+        return;
+    }
+
+    json[length++] = '\n';
+    Serial.write(reinterpret_cast<const uint8_t *>(json), length);
+}
+
+void sendGuiCommandAck(bool accepted, const char *messageText) {
+    JsonDocument message;
+    message["type"] = "command_ack";
+    message["accepted"] = accepted;
+    message["message"] = messageText;
+
+    char json[256];
+    if (measureJson(message) >= sizeof(json)) {
+        Serial.println("{\"type\":\"command_ack\",\"accepted\":false,\"message\":\"Acknowledgment too large\"}");
+        return;
+    }
+
+    size_t length = serializeJson(message, json, sizeof(json) - 1);
+    if (length == 0) {
+        Serial.println("{\"type\":\"command_ack\",\"accepted\":false,\"message\":\"Acknowledgment serialization failed\"}");
+        return;
+    }
+
+    json[length++] = '\n';
+    Serial.write(reinterpret_cast<const uint8_t *>(json), length);
 }

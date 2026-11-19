@@ -205,7 +205,14 @@ int findPressureRangeWithADC(){
     vTaskDelay(pdMS_TO_TICKS(5000));
 
     //Pressurize system and listen for button press to stop pressurizing
+    const unsigned long pressurization_start = millis();
     while(button_state == HIGH){
+        if(millis() - pressurization_start >= 35000UL){
+            stopMotor();
+            Serial.println("Calibration pressurization timed out. Stopping motor.");
+            return -1;
+        }
+
         int pressure = readTransducer();
         startMotor();
         button_state = readButton();

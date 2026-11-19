@@ -1,6 +1,7 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import json
+import serial
 
 import ComCenterFuncs as cf 
 
@@ -45,6 +46,18 @@ root = tk.Tk()
 #Title and geometry 
 root.title("ESP32 Command Center")
 root.geometry("500x600")
+
+try:
+    cf.openSerialConnection()
+except serial.SerialException as error:
+    messagebox.showerror(
+        "ESP32 Connection Error",
+        "Could not open {} at 115200 baud. Set ESP32_PORT to the ESP32's COM port.\n\n{}".format(
+            cf.device_Port, error
+        ),
+    )
+    root.destroy()
+    raise
 
 #Creating a frame within so that we can organize our buttons and create grids 
 
@@ -96,27 +109,27 @@ debug_Frame.grid(row=7, column=0, padx=10, pady=10)
 debug_Frame.grid_remove()
 
 #---------- Debug Functions  ----------------------------------------------------
-sol1_Slider = tk.Scale(debug_Frame, from_=0, to=10, orient="horizontal", label="Solenoid 1")
+sol1_Slider = tk.Scale(debug_Frame, from_=1, to=10, orient="horizontal", label="Solenoid 1")
 sol1_Slider.grid(row=1, column=0, padx=10, pady=10)
 sol1_Button = tk.Button(debug_Frame, text="Send", command=lambda: cf.solenoidOpenMessage(1, sol1_Slider.get()))
 sol1_Button.grid(row=1, column=1, padx=10, pady=10)
 
-sol2_Slider = tk.Scale(debug_Frame, from_=0, to=10, orient="horizontal", label = "Solenoid 2")
+sol2_Slider = tk.Scale(debug_Frame, from_=1, to=10, orient="horizontal", label = "Solenoid 2")
 sol2_Slider.grid(row=2, column=0, padx=10, pady=10)
 sol2_Button = tk.Button(debug_Frame, text="Send", command=lambda: cf.solenoidOpenMessage(2, sol2_Slider.get()))
 sol2_Button.grid(row=2, column=1, padx=10, pady=10)
 
-sol3_Slider = tk.Scale(debug_Frame, from_=0, to=10, orient="horizontal", label="Solenoid 3")
+sol3_Slider = tk.Scale(debug_Frame, from_=1, to=10, orient="horizontal", label="Solenoid 3")
 sol3_Slider.grid(row=3, column=0, padx=10, pady=10)
 sol3_Button = tk.Button(debug_Frame, text="Send", command=lambda: cf.solenoidOpenMessage(3, sol3_Slider.get()))
 sol3_Button.grid(row=3, column=1, padx=10, pady=10)
 
-sol4_Slider = tk.Scale(debug_Frame, from_=0, to=10, orient="horizontal", label="Solenoid 4")
+sol4_Slider = tk.Scale(debug_Frame, from_=1, to=10, orient="horizontal", label="Solenoid 4")
 sol4_Slider.grid(row=4, column=0, padx=10, pady=10)
 sol4_Button = tk.Button(debug_Frame, text="Send", command=lambda: cf.solenoidOpenMessage(4, sol4_Slider.get()))
 sol4_Button.grid(row=4, column=1, padx=10, pady=10)
 
-run_MotorSlider = tk.Scale(debug_Frame, from_=0, to=10, orient="horizontal", label="Seconds")
+run_MotorSlider = tk.Scale(debug_Frame, from_=1, to=10, orient="horizontal", label="Seconds")
 run_MotorSlider.grid(row=5, column=0, padx=10, pady=10)
 run_MotorButton = ttk.Button(debug_Frame, text = "Send Motor Request", command = lambda: cf.runMotorMessage(run_MotorSlider.get()))
 run_MotorButton.grid(row=5, column=1,padx=10, pady=10)
@@ -178,17 +191,18 @@ def UpdateTableData(data):
 # All of our functions that need to be run repeatedly, will be called by this.
 def LoopingFunctions():
 
-    # Generating our fake replies for now, until we get the ESP32 ready. 
-    fake_reply = cf.FakeReplies()
-    print(fake_reply)
-
-    # Getting the replies from the reader object variable, and processing them
-    if(cf.esp32_reader_object.latest_line == None):
-        print("Latest Line is None Type. Messages not going through")
-
-    else:
-        esp32_reply = cf.handleReplies(cf.esp32_reader_object.latest_line)
-        UpdateTableData(esp32_reply)
+    line = cf.takeLatestLine()
+    if line is not None:
+        esp32_reply = cf.handleReplies(line)
+        if esp32_reply is not None:
+            if "__command_ack__" in esp32_reply:
+                accepted, message = esp32_reply["__command_ack__"]
+                if accepted:
+                    messagebox.showinfo("ESP32 Command", message)
+                else:
+                    messagebox.showwarning("ESP32 Command", message)
+            else:
+                UpdateTableData(esp32_reply)
 
     root.after(500, LoopingFunctions)
 

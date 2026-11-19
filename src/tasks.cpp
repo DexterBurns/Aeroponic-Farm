@@ -50,7 +50,10 @@ int taskRunner(int chosen_task, int task_time, int misting_interval, int misting
 
         case PRESSURE_CALIBRATION:
             Serial.println("Pressure Calibration test chosen.\n");
-            findPressureRangeWithADC();
+            if(findPressureRangeWithADC() != 1){
+                Serial.println("Pressure calibration failed.\n");
+                return -1;
+            }
             break;
 
         case DAY_NIGHT_CYCLE:
