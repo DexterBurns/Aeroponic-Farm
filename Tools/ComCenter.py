@@ -168,7 +168,7 @@ for parameter, default_value in data_Table_Dict.items():
 def UpdateTableData(data):
 
     # For every parameter, set the parameters value in the table
-    for parameter, current_reading in data_Table_Dict.items():
+    for parameter, current_reading in data.items():
         status_Table.set(parameter, "values", current_reading)
 
     return 0
