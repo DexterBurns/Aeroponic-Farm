@@ -29,7 +29,8 @@ Smoothed <int> p_transducer_ADC;
 using namespace ADS1X15;
 ADS1115<TwoWire> ads(Wire);
 
-// Scope to constructor, and define variables
+// Scope to constructor, and define variables. 
+// This function 
 void pressureStruct::pressureStructInit()
 {
     minPressure_ADC.begin(SMOOTHED_EXPONENTIAL, 10);
@@ -49,7 +50,7 @@ void pressureStruct::pressureStructInit()
         adc_maxPressure = adc_maxPressure_hold;
     }
 
-    if (adc_maxPressure_hold == adc_maxPressure_hold){
+    if (adc_maxPressure_hold == adc_minPressure_hold){
         adc_maxPressure_hold++;
     }
 
@@ -136,7 +137,7 @@ int pressurizeToMaxPSI(){
     bool button_state = readButton();
     startMotor();
     unsigned long start_time = millis(); // Time motor started
-    int motor_run_duration = 35000; // Max duration to run motor in ms, to avoid overpressurization in case of failure
+    int motor_run_duration = 10000; // Max duration to run motor in ms, to avoid overpressurization in case of failure
     Serial.println("Press button for emergency stop, if needed!\n");
 
     while(state_flag == false){
@@ -289,7 +290,7 @@ so that we can read the manual pressure and associate it with a digital value in
 2. Motor will turn on for x seconds, and then stay off for x*8 seconds. (number is arbitrary)
 3. Print to serial what the digital pressure transducer is reading, during all of this. */
 // This function wqas just a safety measure during development to see how high we could
-// pressurize the system without 
+// pressurize the system without destroying it
 void  config_pTransducer_debug(int on_duration){
 
     int off_duration = on_duration*off_duration_scale;

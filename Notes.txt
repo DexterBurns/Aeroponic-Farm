@@ -138,5 +138,75 @@ JSON Objects:
     Cycle (Day/Night/off)
     Pump Status (Running/Stopped)
 
+Back to the ESP32, we'll be writing software again for this. So what do we need? 
+
+ADC:
+    New ADC in the system that reads inputs from 0 to 5v. We need a function for this. One that 
+    provides continuous readings to the board, all the time. I'd optimally like this to be a function/class 
+    that could be initialized and permenantly have that value and do the calculations for psi for each 
+    transducer. I think the ADC should have its own class that reads every device connected to it 
+    and just exposes the values for each device/slot using a FreeRTOS taask and protected 
+    atomic variable.
+
+    Communication protocol will be the two wire RS485 from the ADC to the ESP32.
+
+Pressure Transducers
+    I'd like for a function that would calculate all the transducer's 0 to 100 psi ADC ranges for each one
+
+    A function to initialize the transducer comms.
+
+    A function to read the transducers' pressures. This should read ALL of their pressures and take 
+        an average of what they are all reading and consider that the whole system's pressure
+
+    A function to read each individual transducer's ADC and PSI readings
+
+    Functioni to calculate pressure using a moving average. Should only need to do one at a time.
+
+    Function to facilitate pressurizing the system to max pressure. This should take into consideration
+    each pressure transducer. 
+
+    Function to find min and max pressure ranges of each type of transducer. These values should 
+    be saved to prefs as well. 
+
+    Need a function to be able to outright bring our system to full 100 psi pressure. This 
+    should just be a function that says bring the system to this specific PSI value by 
+    turning on the motor and pressurizing the system to the specified value
+
+    Priming Function - Since we changed the design of the system and there is a depressurize valve in the system,
+    we need to coordinate with that to be able to get some water into the lines and then close the 
+    D-Valve so that the motor can keep pressurizing and the line is filled with water. Need
+    to determine how much time is needed for the water to fill up. This should be called the
+    priming function, if all goes well, this shouldn't need to be done again once primed. 
+
+Motor:
+    Should be the same too, keep the basic on/off commands with a set timer. Should also add
+    safety controls so that the system doesnt go above the 10 seconds motor-on limit. 
+    (I chose that limit based on what i experienced in V1)
+
+D-Valve:
+    This should b a function to control the D-valve in the system. Simple Basic open and close 
+    functionality with ability to send how much time to open the valve (Open and close time should be added to this). 
+    I think maybe this should also have a safety mechanism that makes it so that
+    if the system gets above a certain PSI or any other erros open this valve up and 
+    rapidly depressurize the system.
+
+
+Level Readers
+    A function to read the levels of the level readers, these will be in pairs, more than likely.
+    6 level readers, 2 pairs each, a pair at high, a pair at medium and a pair at low. Once the 
+    nutrients have reached LOW, the system should pause and alert that the nutrients are low. 
+    Maybe this could be a beeping signal or maybe it send a message over wifi that something is wrong.
+
+
+Wifi Alert
+    I'd like for this to be a function that sends the basic stats and parameters of the system to 
+    me remotely, via wifi. I'm thinking Blynk or something that would send notifications to my phone
+    or pc, about what's going on with the system.
+
 
     
+
+
+
+
+
