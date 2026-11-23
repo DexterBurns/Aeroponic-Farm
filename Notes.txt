@@ -176,7 +176,11 @@ Pressure Transducers
     we need to coordinate with that to be able to get some water into the lines and then close the 
     D-Valve so that the motor can keep pressurizing and the line is filled with water. Need
     to determine how much time is needed for the water to fill up. This should be called the
-    priming function, if all goes well, this shouldn't need to be done again once primed. 
+    priming function, if all goes well, this shouldn't need to be done again once primed. I'm 
+    wondering if we need any logic to be able to tell when the system needs priminng again though. Because i Can see 
+    a situation happening when the system is unprimed, maybe a hose popped off or maybe it unprimes 
+    and air is introduced in the system over time. Maybe this could be a function that is ran once a week,
+    or so often. So we'd 
 
 Motor:
     Should be the same too, keep the basic on/off commands with a set timer. Should also add
