@@ -150,6 +150,12 @@ ADC:
 
     Communication protocol will be the two wire RS485 from the ADC to the ESP32.
 
+Button:
+    I ordered some buttons, and I think they'd be good to wire up and maybe have each of them 
+    responsible for a different function? I only have 2 spots left on the ADC, So maybe one button 
+    for functions like the PSI test and the other one to swap day/night modes? Thatd put us at 8 inputs
+    with the two buttons being inputs 7 and 8.
+
 Pressure Transducers
     I'd like for a function that would calculate all the transducer's 0 to 100 psi ADC ranges for each one
 
@@ -180,7 +186,7 @@ Pressure Transducers
     wondering if we need any logic to be able to tell when the system needs priminng again though. Because i Can see 
     a situation happening when the system is unprimed, maybe a hose popped off or maybe it unprimes 
     and air is introduced in the system over time. Maybe this could be a function that is ran once a week,
-    or so often. So we'd 
+    or so often. 
 
 Motor:
     Should be the same too, keep the basic on/off commands with a set timer. Should also add
@@ -201,12 +207,18 @@ Level Readers
     nutrients have reached LOW, the system should pause and alert that the nutrients are low. 
     Maybe this could be a beeping signal or maybe it send a message over wifi that something is wrong.
 
+Telemetry 
+    This is for our ESP to be sending the constant updates over serial to the GUI. We need
+    two types of Telemetry.
 
-Wifi Alert
-    I'd like for this to be a function that sends the basic stats and parameters of the system to 
-    me remotely, via wifi. I'm thinking Blynk or something that would send notifications to my phone
-    or pc, about what's going on with the system.
+    Serial: (Completed)
+        This is jsut for the basic sending the JSON's over serial to the GUI. Reminds me that the 
+        GUI should probably have a "Begin Serial connection button". Either way, this function 
+        should be a FreeRTOS task to just be always sending these values over serial. 
 
+    Wi-Fi:
+        This will be the function that sends the data over wifi to my phone or something about
+        what's going on with the system. We'll be using Blynk
 
     
 

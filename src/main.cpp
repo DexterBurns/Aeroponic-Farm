@@ -53,13 +53,16 @@ void setup() {
 
   // put your setup code here, to run once:
   Serial.begin(115200);
-  delay(200);                         // give USB/UART a moment
+  delay(200);                         // give USB/UART a moment to init
   Serial.println("BOOT");
   
   Serial.printf("Total heap: %d bytes\n", ESP.getHeapSize());
   Serial.printf("Free heap: %d bytes\n", ESP.getFreeHeap());
   Serial.printf("Total PSRAM: %d bytes\n", ESP.getPsramSize());
   Serial.printf("Free PSRAM: %d bytes\n", ESP.getFreePsram());
+
+  //Initialize ADC 
+  initADC();
 
   //Setting pinmode of Start pin
   initButton();

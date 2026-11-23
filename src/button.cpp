@@ -17,4 +17,9 @@ bool readButton(){
     return state;
 }
 
+# Function to initialize all buttons via the ADC
+void initButtons(){
+
+}
+
 
