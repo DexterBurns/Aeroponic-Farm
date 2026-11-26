@@ -12,6 +12,8 @@
 // Defining our adc modbus object
 ModbusMaster adc_bus;
 
+// ADC not started at first
+static bool adcStartStop = false;
 
 // Structure defining the readings of each ADC value
 struct adcValues {
@@ -116,6 +118,25 @@ int getADCValue(int requested_channel){
 
 }
 
+//Outside Function for stuff to be able to start and stop the ADC Reading
+//Start = True, Stop = False
+int startStopADC(bool start_stop){
+
+    // Start the ADC if true
+    if (start_stop == true){
+
+        adcStartStop = true;
+        perpetualADCRead();
+
+    }
+
+    else{
+        adcStartStop = false;
+    }
+
+}
+
+//Perpetual ADC Read
 int perpetualADCRead(){
 
     while (adcStartStop == true){
