@@ -79,6 +79,8 @@ void setup() {
 
   // Create RTOS Task that will constantly calculate and monitor pressure
   xTaskCreate(calculatePressureTask, "Pressure Calc", 2048, NULL, 4, NULL);
+  
+
 
   // Init Scheduler parameters
   schedulerInit();

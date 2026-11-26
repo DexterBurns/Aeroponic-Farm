@@ -1,14 +1,16 @@
-// Motor Debug Header Files
 #ifndef ADCCOMMS_H
 #define ADCCOMMS_H
 
-#include <Arduino.h>
+
+//Variable that Start/Stops our perpetual ADC readings
+bool adcStartStop = false;
 
 //Function to initialize Serial connection to the ADC. and open the RS485 Connections
-void initADC();
+int initADC();
 
-bool readButton();
+int readADC();
 
-
+//Channels run from 0 to 7, and return the volts in in mV
+int getADCValue(int requested_channel);
 
 #endif
