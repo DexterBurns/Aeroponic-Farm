@@ -149,7 +149,6 @@ int perpetualADCRead(){
         //If we lose communications with the ADC. Stop reading from it, and set an error state.
         if (result = -1){
 
-            
             adcStartStop = false;
 
         }

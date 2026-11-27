@@ -7,9 +7,24 @@
 #include "tasks.h"
 #include "scheduler.h"
 #include <Preferences.h>
+#include <string>
 
 // Define buzzer pin
 #define BUZZER_PIN 21
+
+/* This is the structure for the Busy Idle and Error States */
+struct esp32State {
+  bool busy = false;
+  bool idle = false;
+  bool error = false; 
+}; 
+
+static esp32State esp32CurrentState;
+
+void StateHandler(const std::string&);
+
+/* End */
+
 
 bool motor_flag = false;
 uint32_t curr_pressure = 0;
@@ -214,3 +229,39 @@ void calculatePressureTask(void *parameters){
 
 }
 
+// Function to handle the current state of the ESP32. Something should be
+// reading this at all times
+void StateHandler(const std::string& state){
+
+  if (state == "idle"){
+    esp32CurrentState.idle = true;
+    esp32CurrentState.busy = false;
+    esp32CurrentState.error = false;
+  }
+
+  else if (state == "busy"){
+    esp32CurrentState.idle = false;
+    esp32CurrentState.busy = true;
+    esp32CurrentState.error = false;
+  }
+
+  else if (state == "error"){
+    esp32CurrentState.idle = false;
+    esp32CurrentState.busy = false;
+    esp32CurrentState.error = true;
+    
+  }
+
+}
+
+// Function to constantly evaluate the state of the ESP32
+void StateEvaluator(){
+
+  // Other states don't matter. If we are in error state. STOP Everyhting and go into recovery mode
+  if (esp32CurrentState.error == true){
+
+    //Stop the Motor at the very least 
+
+  }
+
+}

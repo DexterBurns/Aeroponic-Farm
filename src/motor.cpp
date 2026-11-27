@@ -21,7 +21,8 @@ void stopMotor(){
     digitalWrite(MOTOR_RELAY, LOW);
 }
 
-// Activate the motor for a certain amount of time 
+// Activate the motor for a certain amount of time. This is not safe, 
+// needs to be rewritten with a loop that constantly checks error state of the ESP
 void activateMotorWithDelay(int time_ms){
 
   // get time started
@@ -34,7 +35,7 @@ void activateMotorWithDelay(int time_ms){
 
 }
 
-//Function to pressurize until maximum pressure reached
+
 
 
 
