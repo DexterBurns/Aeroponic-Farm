@@ -12,7 +12,8 @@
 // Defining our adc modbus object
 ModbusMaster adc_bus;
 
-// ADC not started at first
+// ADC not started at first. Static because it will only ever be this 
+// variable a function would be referencing 
 static bool adcStartStop = false;
 
 // Structure defining the readings of each ADC value
@@ -139,8 +140,20 @@ int startStopADC(bool start_stop){
 //Perpetual ADC Read
 int perpetualADCRead(){
 
+    // Read Forever unless we lose communications with the ADC
     while (adcStartStop == true){
         
+        // Reading ADC values and also setting them at the same time
+        int result = readADC();
+
+        //If we lose communications with the ADC. Stop reading from it, and set an error state.
+        if (result = -1){
+
+            
+            adcStartStop = false;
+
+        }
+
     }
 }
 
